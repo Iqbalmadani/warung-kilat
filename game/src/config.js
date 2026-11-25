@@ -70,26 +70,33 @@ export const LAYOUT = {
   chop:       { x: 532,  y: 196, w: 220,  h: 148 },
   plate:      { x: 768,  y: 196, w: 220,  h: 148 },
   serve:      { x: 1004, y: 196, w: 236,  h: 148 },
-  cook:       { x: 40,   y: 360, w: 1200, h: 150 },
   bins:       { x: 40,   y: 524, w: 1248, h: 116 },
   bin:        { w: 220,  h: 104, gap: 16 },
   hands:      { x: 1024, y: 524, w: 216,  h: 104 },
   help:       { x: 40,   y: 652, w: 1200, h: 56 },
   // Hub view (true top-down floor plan of the whole warung). Table centres line
   // up with the front view's customer slots, so a customer stays in place
-  // when the camera walks from the map into the counter view.
+  // when the camera walks from the map into the counter view. The kitchen is
+  // the top room, the counter band the middle strip, dining the bottom room.
   hub: {
-    kitchen: { x: 40,   y: 64,  w: 1200, h: 316 },
-    dining:  { x: 40,   y: 396, w: 1200, h: 284 },
-    rice:    { x: 120,  y: 110, w: 120,  h: 80 },
-    stove:   { x: 280,  y: 110, w: 200,  h: 80 },
-    chop:    { x: 520,  y: 110, w: 180,  h: 80 },
-    plate:   { x: 760,  y: 110, w: 160,  h: 80 },
-    serve:   { x: 980,  y: 110, w: 220,  h: 80 },
-    cook:    { x: 640,  y: 300 },
-    counter: { x: 40,   y: 396, w: 1200, h: 74 },
-    table:   { w: 180,  h: 90,  gap: 64 },
-    tableRow:{ x: 110,  y: 520 },
+    kitchen: { x: 40,   y: 64,  w: 1200, h: 252 },
+    dining:  { x: 40,   y: 372, w: 1200, h: 300 },
+    rice:    { x: 110,  y: 100, w: 110,  h: 70 },
+    stove:   { x: 270,  y: 100, w: 210,  h: 70 },
+    chop:    { x: 530,  y: 100, w: 170,  h: 70 },
+    plate:   { x: 750,  y: 100, w: 150,  h: 70 },
+    serve:   { x: 950,  y: 100, w: 240,  h: 70 },
+    bins:    { x: 110,  y: 244, w: 150,  h: 52, gap: 20 },
+    cook:    { x: 920,  y: 252 },
+    counter: { x: 40,   y: 316, w: 1200, h: 56 },
+    table:   { w: 110,  h: 110, gap: 134 },
+    tableRow:{ x: 145,  y: 470 },
+  },
+  // View tabs in the HUD (clickable): PETA = hub, DAPUR = cook, KONTER = front.
+  viewTabs: {
+    hub:   { x: 1000, y: 10, w: 78,  h: 36 },
+    cook:  { x: 1086, y: 10, w: 88,  h: 36 },
+    front: { x: 1182, y: 10, w: 90,  h: 36 },
   },
   // The view switch button sits bottom-right in every view.
   viewToggle: { x: 1140, y: 656, w: 120,  h: 40 },

@@ -30,7 +30,11 @@ function startTransition(world, to) {
 /** Handle a click at logical-field coordinates. Returns true when it did something. */
 export function handleClick(world, x, y) {
   if (world.transition) return false;
-  const { rice, fry, chop, plate, serve, bins, bin, viewToggle, front, hub } = LAYOUT;
+  const { rice, fry, chop, plate, serve, bins, bin, viewToggle, viewTabs, front, hub } = LAYOUT;
+  // HUD view tabs: tap PETA / DAPUR / KONTER to walk straight there.
+  if (inside(x, y, viewTabs.hub)) return startTransition(world, 'hub');
+  if (inside(x, y, viewTabs.cook)) return startTransition(world, 'cook');
+  if (inside(x, y, viewTabs.front)) return startTransition(world, 'front');
   if (inside(x, y, viewToggle)) {
     return startTransition(world, world.view === 'hub' ? 'cook' : 'hub');
   }

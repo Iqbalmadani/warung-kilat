@@ -122,17 +122,25 @@ function drawBackground(ctx, view) {
   ctx.fillStyle = PALETTE.wall;
   ctx.fillRect(0, 0, FIELD.width, FIELD.height);
   if (view === 'hub') {
-    // The hub is the warung itself from directly above: one wooden floor with
-    // a tile grid, no walls in the way — the whole theme in one picture.
-    ctx.fillStyle = '#c89a6b';
+    // The hub is the warung itself from directly above: a dark frame, then
+    // two rooms with different floors — cream checkerboard in the kitchen,
+    // terracotta checkerboard in the dining room — and a flat wooden counter
+    // band between them. No walls, no front faces: every room is a footprint.
+    const { hub } = LAYOUT;
+    ctx.fillStyle = PALETTE.board;
     ctx.fillRect(0, 56, FIELD.width, FIELD.height - 56);
-    ctx.strokeStyle = 'rgba(0,0,0,0.10)'; ctx.lineWidth = 2;
-    for (let x = 0; x <= FIELD.width; x += 80) {
-      ctx.beginPath(); ctx.moveTo(x, 56); ctx.lineTo(x, FIELD.height); ctx.stroke();
-    }
-    for (let y = 56; y <= FIELD.height; y += 80) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(FIELD.width, y); ctx.stroke();
-    }
+    checkerFloor(ctx, hub.kitchen.x, hub.kitchen.y, hub.kitchen.w, hub.kitchen.h, 42, '#f2e6c8', '#e6d5ae');
+    checkerFloor(ctx, hub.dining.x, hub.dining.y, hub.dining.w, hub.dining.h, 50, '#d98a5f', '#c97a4e');
+    ctx.strokeStyle = '#2b1d12'; ctx.lineWidth = 4;
+    rr(ctx, hub.kitchen.x, hub.kitchen.y, hub.kitchen.w, hub.kitchen.h, 8); ctx.stroke();
+    rr(ctx, hub.dining.x, hub.dining.y, hub.dining.w, hub.dining.h, 8); ctx.stroke();
+    // Big translucent room names across each floor, like a floor plan.
+    ctx.fillStyle = 'rgba(43,29,18,0.10)';
+    ctx.font = `800 48px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('DAPUR', 640, 216);
+    ctx.font = `800 44px ${FONT}`;
+    ctx.fillText('RUANG MAKAN', 640, 644);
     return;
   }
   if (view === 'front') {
@@ -169,11 +177,24 @@ function drawBackground(ctx, view) {
     drawFloor(ctx);
     return;
   }
-  // Top view: the kitchen wall, and a floor with a slight perspective — the tile
-  // seams fan out toward the viewer, so the room reads as a space, not a card.
-  ctx.fillStyle = PALETTE.wallStripe;
-  for (let x = 0; x < FIELD.width; x += 96) ctx.fillRect(x, 0, 48, FIELD.height);
-  drawFloor(ctx);
+  // The kitchen from directly above: one big checkerboard floor, stations
+  // along the top as flat footprints, the cook a dot on the open floor.
+  checkerFloor(ctx, 0, 56, FIELD.width, FIELD.height - 56, 80, '#f2e6c8', '#e6d5ae');
+}
+
+/** A checkerboard floor in two tones, for a top-down room. */
+function checkerFloor(ctx, x, y, w, h, s, c1, c2) {
+  ctx.fillStyle = c1;
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = c2;
+  const cols = Math.ceil(w / s);
+  const rows = Math.ceil(h / s);
+  for (let r = 0; r < rows; r += 1) {
+    for (let c = 0; c < cols; c += 1) {
+      if ((r + c) % 2 === 0) continue;
+      ctx.fillRect(x + c * s, y + r * s, s, s);
+    }
+  }
 }
 
 /** The floor strip at the bottom, with perspective seams fanning outward. */
@@ -197,20 +218,41 @@ function drawHud(ctx, world) {
   ctx.fillStyle = PALETTE.board;
   ctx.fillRect(hud.x, hud.y, hud.w, hud.h);
   text(ctx, 'WARUNG KILAT', 20, 38, 28, '#ffd166', 800);
-  text(ctx, 'HARI ' + world.day, 420, 38, 20, '#fff8e7', 700);
+  text(ctx, 'HARI ' + world.day, 330, 38, 20, '#fff8e7', 700);
   const dayLeft = Math.max(0, world.dayTime);
   ctx.fillStyle = '#5a4028';
-  rr(ctx, 500, 22, 180, 14, 7); ctx.fill();
+  rr(ctx, 420, 22, 150, 14, 7); ctx.fill();
   ctx.fillStyle = dayLeft < 20 ? PALETTE.red : PALETTE.teal;
-  rr(ctx, 500, 22, 180 * (dayLeft / 120), 14, 7); ctx.fill();
-  text(ctx, `${Math.ceil(dayLeft)} dtk`, 690, 36, 14, '#fff8e7', 600);
-  text(ctx, '🪙', 760, 38, 22, '#ffd166', 700, 'left');
-  text(ctx, `${world.coins}`, 790, 38, 24, '#ffd166', 800);
+  rr(ctx, 420, 22, 150 * (dayLeft / 120), 14, 7); ctx.fill();
+  text(ctx, `${Math.ceil(dayLeft)} dtk`, 580, 36, 14, '#fff8e7', 600);
+  text(ctx, '🪙', 630, 38, 22, '#ffd166', 700, 'left');
+  text(ctx, `${world.coins}`, 660, 38, 24, '#ffd166', 800);
   let hearts = '';
   for (let i = 0; i < 3; i += 1) hearts += i < world.hearts ? '♥' : '♡';
-  text(ctx, hearts, 900, 38, 24, '#ff6b81', 700);
-  if (world.combo >= 2) text(ctx, `COMBO x${world.combo}`, 1020, 38, 20, '#ff9f1c', 800);
-  text(ctx, `Saji: ${world.served}`, 1160, 38, 16, '#fff8e7', 600);
+  text(ctx, hearts, 750, 38, 24, '#ff6b81', 700);
+  text(ctx, `Saji: ${world.served}`, 850, 38, 16, '#fff8e7', 600);
+  if (world.combo >= 2) text(ctx, `COMBO x${world.combo}`, 940, 38, 20, '#ff9f1c', 800);
+  drawViewTabs(ctx, world);
+}
+
+/** The three view tabs at the top right (1 PETA / 2 DAPUR / 3 KONTER):
+ *  the active view is gold, the others dark — tap one to walk there. */
+function drawViewTabs(ctx, world) {
+  const tabs = [
+    { key: 'hub', label: '1  PETA', rect: LAYOUT.viewTabs.hub },
+    { key: 'cook', label: '2  DAPUR', rect: LAYOUT.viewTabs.cook },
+    { key: 'front', label: '3  KONTER', rect: LAYOUT.viewTabs.front },
+  ];
+  for (const tab of tabs) {
+    const active = world.view === tab.key;
+    ctx.fillStyle = active ? '#ffd166' : '#5a4028';
+    rr(ctx, tab.rect.x, tab.rect.y, tab.rect.w, tab.rect.h, 18); ctx.fill();
+    if (!active) {
+      ctx.strokeStyle = '#8b7355'; ctx.lineWidth = 1.5;
+      rr(ctx, tab.rect.x, tab.rect.y, tab.rect.w, tab.rect.h, 18); ctx.stroke();
+    }
+    text(ctx, tab.label, tab.rect.x + tab.rect.w / 2, tab.rect.y + 24, 13, active ? '#2b1d12' : '#fff8e7', 800, 'center');
+  }
 }
 
 function drawTicket(ctx, ticket, x, y, w, h, now) {
@@ -252,63 +294,82 @@ function drawBoard(ctx, world, now) {
   }
 }
 
-function drawSlot(ctx, x, y, w, h, job, label) {
-  ctx.fillStyle = '#fff8e7';
-  rr(ctx, x, y, w, h, 8); ctx.fill();
-  ctx.strokeStyle = '#d9c48f'; ctx.lineWidth = 2;
-  rr(ctx, x, y, w, h, 8); ctx.stroke();
+/**
+ * One cooking slot, seen from directly above: a flat dark pan with the job's
+ * icon in it and a progress ring around the rim. No card, no front face.
+ */
+function drawPan(ctx, x, y, w, h, job, label) {
+  const cx = x + w / 2;
+  const cy = y + h / 2 - 4;
+  const r = Math.min(w, h) / 2 - 8;
+  ctx.fillStyle = '#3d2b1f';
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#5a4028';
+  ctx.beginPath(); ctx.arc(cx, cy, r - 6, 0, Math.PI * 2); ctx.fill();
   if (!job) {
-    text(ctx, label, x + w / 2, y + h / 2 + 5, 13, PALETTE.muted, 600, 'center');
+    text(ctx, label, cx, cy + 5, 13, '#a98f6f', 600, 'center');
     return;
   }
-  ctx.fillStyle = '#efe3c8';
-  ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2 - 6, 27, 0, Math.PI * 2); ctx.fill();
-  drawIngredientIcon(ctx, job.remaining <= 0 ? job.cookedId : job.raw, x + w / 2, y + h / 2 - 6, 22);
-  const frac = 1 - job.remaining / job.total;
-  ctx.fillStyle = '#e5d5ae';
-  rr(ctx, x + 8, y + h - 16, w - 16, 8, 4); ctx.fill();
-  ctx.fillStyle = job.remaining <= 0 ? PALETTE.green : '#f4a261';
-  rr(ctx, x + 8, y + h - 16, (w - 16) * frac, 8, 4); ctx.fill();
-  if (job.remaining <= 0) text(ctx, 'SIAP!', x + w / 2, y + 18, 15, PALETTE.green, 800, 'center');
+  drawIngredientIcon(ctx, job.remaining <= 0 ? job.cookedId : job.raw, cx, cy, r - 14);
+  ring(ctx, cx, cy, r + 2, 1 - job.remaining / job.total, job.remaining <= 0 ? PALETTE.green : '#f4a261');
+  if (job.remaining <= 0) text(ctx, 'SIAP!', cx, y + 16, 14, PALETTE.green, 800, 'center');
 }
 
+/**
+ * The kitchen stations, seen from directly above: each one is a flat footprint
+ * on the checkerboard floor — a pot, two pans, a board, a plate, a bell — with
+ * its name written under it. The old 2.5D boxes are gone: from above, a
+ * station has no front face.
+ */
 function drawStations(ctx, world, now) {
   const { rice, fry, chop, plate, serve } = LAYOUT;
-  // Rice cooker
-  counter3d(ctx, rice);
+  // Rice cooker: a flat pot on the floor, lid on top, steam curling up.
+  ctx.fillStyle = '#a9713d';
+  rr(ctx, rice.x, rice.y, rice.w, rice.h, 10); ctx.fill();
   ctx.fillStyle = '#9aa5b1';
-  rr(ctx, rice.x + 30, rice.y + 34, 120, 66, 12); ctx.fill();
+  ctx.beginPath(); ctx.arc(rice.x + 90, rice.y + 66, 46, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#6b7280';
-  rr(ctx, rice.x + 30, rice.y + 26, 120, 18, 9); ctx.fill();
+  ctx.beginPath(); ctx.arc(rice.x + 90, rice.y + 66, 38, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#fff8e7';
-  ctx.beginPath(); ctx.ellipse(rice.x + 90, rice.y + 36, 44, 8, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(rice.x + 90, rice.y + 66, 28, 20, 0, 0, Math.PI * 2); ctx.fill();
   const steam = Math.sin(now * 2) * 3;
-  ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(rice.x + 70 + steam, rice.y + 18); ctx.quadraticCurveTo(rice.x + 76, rice.y + 6, rice.x + 70, rice.y - 4); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(rice.x + 108 - steam, rice.y + 18); ctx.quadraticCurveTo(rice.x + 102, rice.y + 6, rice.x + 108, rice.y - 4); ctx.stroke();
-  text(ctx, 'RICE COOKER', rice.x + 90, rice.y + 122, 13, '#fff8e7', 800, 'center');
-  text(ctx, 'klik: ambil nasi', rice.x + 90, rice.y + 140, 11, '#e8cba0', 600, 'center');
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(rice.x + 70 + steam, rice.y + 26); ctx.quadraticCurveTo(rice.x + 76, rice.y + 12, rice.x + 70, rice.y + 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rice.x + 108 - steam, rice.y + 26); ctx.quadraticCurveTo(rice.x + 102, rice.y + 12, rice.x + 108, rice.y + 2); ctx.stroke();
+  text(ctx, 'NASI', rice.x + 90, rice.y + rice.h + 18, 13, PALETTE.text, 800, 'center');
+  text(ctx, 'klik: ambil nasi', rice.x + 90, rice.y + rice.h + 36, 11, PALETTE.muted, 600, 'center');
 
-  // Wok
-  counter3d(ctx, fry);
-  text(ctx, 'WAJAN — GORENG', fry.x + 14, fry.y + 22, 13, '#fff8e7', 800);
-  drawSlot(ctx, fry.x + 14, fry.y + 34, 120, 100, world.fry[0], 'slot 1');
-  drawSlot(ctx, fry.x + 146, fry.y + 34, 120, 100, world.fry[1], 'slot 2');
+  // Wok: a flat dark slab with two pans on it.
+  ctx.fillStyle = '#a9713d';
+  rr(ctx, fry.x, fry.y, fry.w, fry.h, 10); ctx.fill();
+  drawPan(ctx, fry.x + 14, fry.y + 14, 120, 120, world.fry[0], 'slot 1');
+  drawPan(ctx, fry.x + 146, fry.y + 14, 120, 120, world.fry[1], 'slot 2');
+  text(ctx, 'WAJAN — GORENG', fry.x + fry.w / 2, fry.y + fry.h + 18, 13, PALETTE.text, 800, 'center');
 
-  // Chopping board
-  counter3d(ctx, chop);
-  text(ctx, 'TALENAN — POTONG', chop.x + 14, chop.y + 22, 13, '#fff8e7', 800);
-  drawSlot(ctx, chop.x + 14, chop.y + 34, 192, 100, world.chop, 'kosong');
+  // Chopping board: a flat pale board with the job on it.
+  ctx.fillStyle = '#a9713d';
+  rr(ctx, chop.x, chop.y, chop.w, chop.h, 10); ctx.fill();
+  ctx.fillStyle = '#e8cba0';
+  rr(ctx, chop.x + 14, chop.y + 14, chop.w - 28, 120, 8); ctx.fill();
+  if (world.chop) {
+    drawIngredientIcon(ctx, world.chop.remaining <= 0 ? world.chop.cookedId : world.chop.raw, chop.x + chop.w / 2, chop.y + 74, 24);
+    ring(ctx, chop.x + chop.w / 2, chop.y + 74, 34, 1 - world.chop.remaining / world.chop.total, world.chop.remaining <= 0 ? PALETTE.green : '#f4a261');
+    if (world.chop.remaining <= 0) text(ctx, 'SIAP!', chop.x + chop.w / 2, chop.y + 30, 14, PALETTE.green, 800, 'center');
+  } else {
+    text(ctx, 'kosong', chop.x + chop.w / 2, chop.y + 80, 13, PALETTE.muted, 600, 'center');
+  }
+  text(ctx, 'TALENAN — POTONG', chop.x + chop.w / 2, chop.y + chop.h + 18, 13, PALETTE.text, 800, 'center');
 
-  // Assembly plate
-  counter3d(ctx, plate);
-  text(ctx, 'PIRING SAJI', plate.x + 14, plate.y + 22, 13, '#fff8e7', 800);
-  drawPlateDish(ctx, plate.x + 110, plate.y + 86, world.plate);
+  // Assembly plate: a flat ellipse on the floor.
+  ctx.fillStyle = '#a9713d';
+  rr(ctx, plate.x, plate.y, plate.w, plate.h, 10); ctx.fill();
+  drawPlateDish(ctx, plate.x + 110, plate.y + 74, world.plate);
+  text(ctx, 'PIRING SAJI', plate.x + 110, plate.y + plate.h + 18, 13, PALETTE.text, 800, 'center');
 
-  // Serve window
-  counter3d(ctx, serve);
+  // Serve bell: a flat button on the floor.
+  ctx.fillStyle = '#a9713d';
+  rr(ctx, serve.x, serve.y, serve.w, serve.h, 10); ctx.fill();
   const match = matchingTicket(world);
-  text(ctx, 'JENDELA SAJI', serve.x + 14, serve.y + 22, 13, '#fff8e7', 800);
   const glow = match && Math.floor(now * 3) % 2 === 0;
   ctx.fillStyle = match ? (glow ? '#34c0a9' : PALETTE.serveReady) : PALETTE.serveIdle;
   rr(ctx, serve.x + 28, serve.y + 40, 180, 52, 12); ctx.fill();
@@ -325,49 +386,35 @@ function drawStations(ctx, world, now) {
 }
 
 function drawCookAndBins(ctx, world, now) {
-  const { cook, bins, bin, hands } = LAYOUT;
-  // Wooden counter the cook stands behind — same 2.5D box as the stations.
-  shadow(ctx, cook.x + cook.w / 2, cook.y + 96 + 54 + 8, cook.w * 0.42, 8);
-  ctx.fillStyle = '#6b4423';
-  rr(ctx, cook.x, cook.y + 96 + 48, cook.w, 16, 8); ctx.fill();
-  ctx.fillStyle = PALETTE.counterTop;
-  rr(ctx, cook.x, cook.y + 96, cook.w, 54, 10); ctx.fill();
-  ctx.fillStyle = PALETTE.counter;
-  ctx.fillRect(cook.x, cook.y + 96, cook.w, 8);
-  // The cook, seen from behind: you stand where the cook stands, so the face
-  // is never shown — this is the cook's side of the counter, not the customer's.
-  const cx = cook.x + 110;
-  const cy = cook.y + 60;
-  shadow(ctx, cx, cy + 56, 44, 9);
-  // Back of the head: dark hair, white hat from behind.
-  ctx.fillStyle = '#2b1d12';
-  ctx.beginPath(); ctx.arc(cx, cy - 34, 26, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#fff8e7';
-  rr(ctx, cx - 30, cy - 62, 60, 22, 11); ctx.fill();
-  ctx.fillStyle = '#fff8e7';
-  rr(ctx, cx - 34, cy - 52, 68, 10, 5); ctx.fill();
-  // Red shirt from the back, apron straps over the shoulders.
+  const { bins, bin, hands } = LAYOUT;
+  // The cook, seen from directly above: a dot on the open floor — red shirt,
+  // head, white hat — with the carried items as small circles beside him.
+  const cx = 640;
+  const cy = 434;
+  shadow(ctx, cx, cy + 8, 30, 7);
   ctx.fillStyle = '#e63946';
-  rr(ctx, cx - 34, cy - 6, 68, 56, 12); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy, 26, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#f2c89b';
+  ctx.beginPath(); ctx.arc(cx, cy, 13, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#fff8e7';
-  rr(ctx, cx - 26, cy - 6, 12, 40, 6); ctx.fill();
-  rr(ctx, cx + 14, cy - 6, 12, 40, 6); ctx.fill();
-  text(ctx, 'KOKI', cx, cy + 74, 12, '#fff8e7', 800, 'center');
-  // Carried items float above the cook's hands
+  ctx.beginPath(); ctx.arc(cx, cy - 3, 13, Math.PI, 0); ctx.fill();
+  text(ctx, 'KOKI', cx, cy + 46, 12, PALETTE.text, 800, 'center');
+  // Carried items float beside the cook
   world.hands.forEach((item, i) => {
-    const hx = cx + 62 + i * 52;
+    const hx = cx + 56 + i * 48;
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.beginPath(); ctx.arc(hx, cy - 6, 22, 0, Math.PI * 2); ctx.fill();
-    drawIngredientIcon(ctx, item, hx, cy - 6, 15);
+    ctx.beginPath(); ctx.arc(hx, cy, 20, 0, Math.PI * 2); ctx.fill();
+    drawIngredientIcon(ctx, item, hx, cy, 14);
   });
 
-  // Ingredient bins
+  // Ingredient bins: flat cards on the floor, no 2.5D box.
   const raws = ['ayam', 'telur', 'sayur', 'cabai'];
   const keys = ['2', '3', '4', '5'];
   raws.forEach((id, i) => {
     const x = bins.x + i * (bin.w + bin.gap);
     const def = INGREDIENTS[id];
-    counter3d(ctx, { x, y: bins.y, w: bin.w, h: bin.h });
+    ctx.fillStyle = '#8b5a2b';
+    rr(ctx, x, bins.y, bin.w, bin.h, 10); ctx.fill();
     drawIngredientIcon(ctx, id, x + 40, bins.y + 52, 24);
     text(ctx, def.name, x + 76, bins.y + 44, 17, '#fff8e7', 800);
     text(ctx, def.station === 'fry' ? '→ wajan' : '→ talenan', x + 76, bins.y + 66, 12, '#e8cba0', 600);
@@ -387,7 +434,7 @@ function drawCookAndBins(ctx, world, now) {
     }
     text(ctx, `${world.hands.length}/2`, hands.x + hands.w - 14, hands.y + 24, 12, '#ffd166', 700, 'right');
   }
-  text(ctx, 'Klik bahan → klik stasiun → klik piring → SAJIKAN.  [1] nasi  [Spasi] sajikan  [V] ganti view  [P] jeda', LAYOUT.help.x, LAYOUT.help.y + 22, 14, '#3d2b1f', 600);
+  text(ctx, 'Klik bahan → klik stasiun → klik piring → SAJIKAN.  [1] nasi  [Spasi] sajikan  •  tab PETA/DAPUR/KONTER atau [V] ganti view  •  [P] jeda', LAYOUT.help.x, LAYOUT.help.y + 22, 14, '#3d2b1f', 600);
 }
 
 function drawFlashes(ctx, world) {
@@ -445,33 +492,30 @@ function ring(ctx, x, y, r, frac, color) {
 }
 
 /** The hub: the whole warung from directly above — kitchen, counter, dining
- *  room — with the live state (jobs, plate, waiting customers) drawn on it. */
+ *  room — with the live state (jobs, plate, waiting customers) drawn on it.
+ *  Everything is a footprint on the floor: round tables with chairs around
+ *  them, customers as dots seen from above, stations as flat shapes with
+ *  their names under them. No front faces anywhere. */
 function drawHubScene(ctx, world, now) {
   const { hub } = LAYOUT;
   const match = matchingTicket(world);
-  ctx.setLineDash([10, 8]);
-  ctx.strokeStyle = 'rgba(43,29,18,0.45)'; ctx.lineWidth = 3;
-  rr(ctx, hub.kitchen.x, hub.kitchen.y, hub.kitchen.w, hub.kitchen.h, 14); ctx.stroke();
-  rr(ctx, hub.dining.x, hub.dining.y, hub.dining.w, hub.dining.h, 14); ctx.stroke();
-  ctx.setLineDash([]);
-  text(ctx, 'DAPUR — klik untuk masak', 640, 92, 16, PALETTE.text, 800, 'center');
-  // Rice cooker, seen from above: a round pot with a lid.
+  // Kitchen stations along the top wall, names under each one.
   const rc = { x: hub.rice.x + hub.rice.w / 2, y: hub.rice.y + hub.rice.h / 2 };
   ctx.fillStyle = '#9aa5b1';
-  ctx.beginPath(); ctx.arc(rc.x, rc.y, 34, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(rc.x, rc.y, 32, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#fff8e7';
-  ctx.beginPath(); ctx.ellipse(rc.x, rc.y, 26, 20, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(rc.x, rc.y, 24, 18, 0, 0, Math.PI * 2); ctx.fill();
   text(ctx, 'NASI', rc.x, hub.rice.y + hub.rice.h + 18, 12, PALETTE.text, 800, 'center');
   // Stove with two burners; a job shows its icon and a progress ring.
-  ctx.fillStyle = PALETTE.counter;
+  ctx.fillStyle = '#3d2b1f';
   rr(ctx, hub.stove.x, hub.stove.y, hub.stove.w, hub.stove.h, 10); ctx.fill();
   [330, 430].forEach((bx, i) => {
     const job = world.fry[i];
-    ctx.fillStyle = '#3d2b1f';
-    ctx.beginPath(); ctx.arc(bx, 150, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#5a4028';
+    ctx.beginPath(); ctx.arc(bx, 135, 26, 0, Math.PI * 2); ctx.fill();
     if (job) {
-      drawIngredientIcon(ctx, job.remaining <= 0 ? job.cookedId : job.raw, bx, 150, 14);
-      ring(ctx, bx, 150, 31, 1 - job.remaining / job.total, job.remaining <= 0 ? PALETTE.green : '#f4a261');
+      drawIngredientIcon(ctx, job.remaining <= 0 ? job.cookedId : job.raw, bx, 135, 14);
+      ring(ctx, bx, 135, 31, 1 - job.remaining / job.total, job.remaining <= 0 ? PALETTE.green : '#f4a261');
     }
   });
   text(ctx, 'WAJAN', 380, hub.stove.y + hub.stove.h + 18, 12, PALETTE.text, 800, 'center');
@@ -479,56 +523,83 @@ function drawHubScene(ctx, world, now) {
   ctx.fillStyle = '#e8cba0';
   rr(ctx, hub.chop.x, hub.chop.y, hub.chop.w, hub.chop.h, 10); ctx.fill();
   if (world.chop) {
-    drawIngredientIcon(ctx, world.chop.remaining <= 0 ? world.chop.cookedId : world.chop.raw, 610, 150, 16);
-    ring(ctx, 610, 150, 32, 1 - world.chop.remaining / world.chop.total, world.chop.remaining <= 0 ? PALETTE.green : '#f4a261');
+    drawIngredientIcon(ctx, world.chop.remaining <= 0 ? world.chop.cookedId : world.chop.raw, 615, 135, 16);
+    ring(ctx, 615, 135, 32, 1 - world.chop.remaining / world.chop.total, world.chop.remaining <= 0 ? PALETTE.green : '#f4a261');
   }
-  text(ctx, 'TALENAN', 610, hub.chop.y + hub.chop.h + 18, 12, PALETTE.text, 800, 'center');
+  text(ctx, 'TALENAN', 615, hub.chop.y + hub.chop.h + 18, 12, PALETTE.text, 800, 'center');
   // Assembly plate, seen from above.
-  drawPlateDish(ctx, 840, 150, world.plate);
-  text(ctx, 'PIRING', 840, hub.plate.y + hub.plate.h + 18, 12, PALETTE.text, 800, 'center');
-  // Serve window.
+  drawPlateDish(ctx, 825, 135, world.plate);
+  text(ctx, 'PIRING', 825, hub.plate.y + hub.plate.h + 18, 12, PALETTE.text, 800, 'center');
+  // Serve bell.
   ctx.fillStyle = match ? PALETTE.serveReady : PALETTE.serveIdle;
   rr(ctx, hub.serve.x, hub.serve.y, hub.serve.w, hub.serve.h, 10); ctx.fill();
-  text(ctx, match ? 'SAJIKAN!' : 'SAJIKAN', 1090, 150, 20, '#ffffff', 800, 'center');
-  if (match) text(ctx, DISHES[match.dishId].name, 1090, 172, 12, '#ffffff', 600, 'center');
-  // The cook, seen from above: shoulders, head, white hat.
+  text(ctx, match ? 'SAJIKAN!' : 'SAJIKAN', 1070, 135, 20, '#ffffff', 800, 'center');
+  if (match) text(ctx, DISHES[match.dishId].name, 1070, 157, 12, '#ffffff', 600, 'center');
+  // Ingredient bins along the bottom of the kitchen.
+  const raws = ['ayam', 'telur', 'sayur', 'cabai'];
+  raws.forEach((id, i) => {
+    const x = hub.bins.x + i * (hub.bins.w + hub.bins.gap);
+    ctx.fillStyle = '#8b5a2b';
+    rr(ctx, x, hub.bins.y, hub.bins.w, hub.bins.h, 8); ctx.fill();
+    drawIngredientIcon(ctx, id, x + 30, hub.bins.y + 26, 15);
+    text(ctx, INGREDIENTS[id].name.toUpperCase(), x + 56, hub.bins.y + 31, 12, '#fff8e7', 800);
+  });
+  // The cook, seen from above: a dot on the kitchen floor.
   ctx.fillStyle = '#e63946';
-  ctx.beginPath(); ctx.arc(hub.cook.x, hub.cook.y, 30, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(hub.cook.x, hub.cook.y, 26, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#f2c89b';
-  ctx.beginPath(); ctx.arc(hub.cook.x, hub.cook.y, 15, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(hub.cook.x, hub.cook.y, 13, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#fff8e7';
-  ctx.beginPath(); ctx.arc(hub.cook.x, hub.cook.y - 4, 15, Math.PI, 0); ctx.fill();
-  text(ctx, 'KOKI', hub.cook.x, hub.cook.y + 52, 12, PALETTE.text, 800, 'center');
-  // The serving counter.
-  counter3d(ctx, hub.counter);
+  ctx.beginPath(); ctx.arc(hub.cook.x, hub.cook.y - 3, 13, Math.PI, 0); ctx.fill();
+  text(ctx, 'KOKI', hub.cook.x, hub.cook.y + 44, 12, PALETTE.text, 800, 'center');
+  // The serving counter: a flat wooden band with its name on it.
   ctx.fillStyle = '#a9713d';
-  ctx.fillRect(hub.counter.x, hub.counter.y, hub.counter.w, 6);
-  text(ctx, 'KONTER', 640, hub.counter.y + 46, 14, '#fff8e7', 800, 'center');
-  // Dining room: four tables, one customer per ticket.
+  ctx.fillRect(hub.counter.x, hub.counter.y, hub.counter.w, hub.counter.h);
+  ctx.fillStyle = '#8b5a2b';
+  ctx.fillRect(hub.counter.x, hub.counter.y, hub.counter.w, 5);
+  text(ctx, 'KONTER', 640, hub.counter.y + 36, 16, '#fff8e7', 800, 'center');
+  // Dining room: round tables with chairs around them, one customer per
+  // ticket, seated on the far side and seen from above, with an order card.
   for (let i = 0; i < 4; i += 1) {
     const cx = hub.tableRow.x + i * (hub.table.w + hub.table.gap) + hub.table.w / 2;
-    const ty = hub.tableRow.y;
+    const cy = hub.tableRow.y + hub.table.h / 2;
     ctx.fillStyle = '#8b5a2b';
-    rr(ctx, cx - hub.table.w / 2, ty, hub.table.w, hub.table.h, 12); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, 55, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#a9713d';
-    rr(ctx, cx - hub.table.w / 2, ty, hub.table.w, 10, 6); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, 46, 0, Math.PI * 2); ctx.fill();
+    // Chairs: small dots on all four sides of the table.
     ctx.fillStyle = '#6b4423';
-    ctx.beginPath(); ctx.arc(cx - 55, ty + hub.table.h + 18, 12, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx + 55, ty + hub.table.h + 18, 12, 0, Math.PI * 2); ctx.fill();
+    [[0, -72], [0, 72], [-72, 0], [72, 0]].forEach(([dx, dy]) => {
+      ctx.beginPath(); ctx.arc(cx + dx, cy + dy, 13, 0, Math.PI * 2); ctx.fill();
+    });
     const ticket = world.tickets[i];
     if (!ticket) continue;
     const dish = DISHES[ticket.dishId];
     const frac = Math.max(0, ticket.patience / ticket.maxPatience);
-    drawIngredientIcon(ctx, dish.needs[0], cx - 58, ty + 45, 10);
+    // Order card floating above the customer.
+    ctx.fillStyle = '#fff6df';
+    rr(ctx, cx - 70, cy - 152, 140, 42, 8); ctx.fill();
+    ctx.strokeStyle = '#d9c48f'; ctx.lineWidth = 2;
+    rr(ctx, cx - 70, cy - 152, 140, 42, 8); ctx.stroke();
+    text(ctx, dish.name, cx, cy - 132, 12, PALETTE.text, 800, 'center');
+    text(ctx, `$${dish.price}`, cx, cy - 118, 11, '#b96f1e', 800, 'center');
     // Seated on the far side of the table, facing the counter.
     ctx.fillStyle = CUSTOMER_SHIRTS[ticket.id % 4];
-    ctx.beginPath(); ctx.arc(cx, ty - 14, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy - 72, 20, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = CUSTOMER_SKINS[ticket.id % 4];
-    ctx.beginPath(); ctx.arc(cx, ty - 14, 12, 0, Math.PI * 2); ctx.fill();
-    ring(ctx, cx, ty - 14, 29, frac, frac > 0.5 ? PALETTE.green : frac > 0.3 ? '#f4a261' : PALETTE.red);
+    ctx.beginPath(); ctx.arc(cx, cy - 72, 11, 0, Math.PI * 2); ctx.fill();
+    ring(ctx, cx, cy - 72, 27, frac, frac > 0.5 ? PALETTE.green : frac > 0.3 ? '#f4a261' : PALETTE.red);
+    drawIngredientIcon(ctx, dish.needs[0], cx - 58, cy, 10);
   }
-  text(ctx, 'PELANGGAN — klik untuk layani', 56, 668, 16, PALETTE.text, 800);
-  text(ctx, 'Klik DAPUR untuk masak  •  klik PELANGGAN untuk melayani  •  [V] ganti view', 640, 700, 14, '#3d2b1f', 600, 'center');
+  // Potted plants in the corners of the map (the bottom-right one sits left of
+  // the view button so the button never covers it).
+  [[70, 92], [1210, 92], [70, 644], [1100, 644]].forEach(([px, py]) => {
+    ctx.fillStyle = '#2a9d8f';
+    ctx.beginPath(); ctx.arc(px, py, 17, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#6abe30';
+    ctx.beginPath(); ctx.arc(px, py, 11, 0, Math.PI * 2); ctx.fill();
+  });
+  text(ctx, 'Klik DAPUR untuk masak  •  klik PELANGGAN untuk melayani  •  tab PETA/DAPUR/KONTER atau [V] ganti view', 640, 700, 14, '#e8cba0', 600, 'center');
 }
 
 const CUSTOMER_SKINS = ['#f2c89b', '#e8b88a', '#d9a06b', '#c98d5f'];

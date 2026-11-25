@@ -7,10 +7,15 @@
 // chopping board (1 slot) feed one serving plate; tickets carry patience bars, serving pays
 // price plus a patience-based tip times a combo multiplier, and a missed ticket costs a heart.
 // 5 dishes, 120-second days with ramping pressure, keyboard + mouse play. Three views:
-// a true top-down map of the whole warung (click the kitchen to walk there and cook, click
-// the dining room to walk to the counter and serve — the camera walks between views), the
-// kitchen itself, and the serving counter with the waiting customers. Put the 4 PNG
-// screenshots in screenshots/ (the first by name is the cover) and run it.
+// a true top-down map of the whole warung — two rooms with different checkerboard floors,
+// stations as flat footprints along the kitchen wall, round tables with chairs in the dining
+// room, customers seen from above — plus HUD tabs (1 PETA / 2 DAPUR / 3 KONTER) to walk
+// between views. Click the kitchen to walk there and cook, click the dining room to walk to
+// the counter and serve; the camera walks between views. The kitchen itself is the same
+// room zoomed in, still from directly above: flat pans on the floor, the cook a dot, the
+// ingredient bins along the bottom. The counter view is the front of the warung, customers
+// with faces behind the long counter. Put the 4 PNG screenshots in screenshots/ (the first
+// by name is the cover) and run it.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
