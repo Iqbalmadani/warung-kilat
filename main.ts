@@ -1,18 +1,19 @@
-// A working best-game-01 entry (Node 22, standard library only): the game is this directory's
-// game/ folder, plain static files a desktop browser loads offline (game/index.html and its ES
-// modules, no library and no network request), and the program hands it in. It copies game/ and
-// screenshots/ from beside this file to /output and writes /output/dossier.json, the summary the
-// judge reads, with the vendored make.fun library. A starting point, not a winner: Block Dodger, a
-// plain 2D canvas game where a paddle dodges falling blocks and catches coins, with a title screen,
-// score, lives and levels, game over and restart, flat colours and no sound. Build your own game
-// (any genre, any library you vendor under game/, or none), put your 3 or 4 PNG or JPEG screenshots
-// in screenshots/ (the first by name is the cover) and run it.
+// Warung Kilat (Node 22, standard library only): a fast Indonesian warung cooking game.
+// The game is this directory's game/ folder — plain static files a desktop browser loads
+// offline (game/index.html and its ES modules, no library and no network request) — and this
+// program hands it in. It copies game/ and screenshots/ from beside this file to /output and
+// writes /output/dossier.json, the summary the judge reads, with the vendored make.fun
+// library. The game: cook to order against the clock — rice cooker, wok (2 slots) and
+// chopping board (1 slot) feed one serving plate; tickets carry patience bars, serving pays
+// price plus a patience-based tip times a combo multiplier, and a missed ticket costs a heart.
+// 5 dishes, 120-second days with ramping pressure, keyboard + mouse play. Put the 4 PNG
+// screenshots in screenshots/ (the first by name is the cover) and run it.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
@@ -39,3 +40,14 @@ writeFileSync(
     game_path_max_bytes: 1000,
   }),
 );
+
+// Build-time sanity check: the dossier must exist, parse, and name the same game files and
+// screenshots that were just copied, so a broken build fails here instead of at the judge.
+const dossierPath = join(out, 'dossier.json');
+const dossier = JSON.parse(readFileSync(dossierPath, 'utf8'));
+const gameFiles = readdirSync(join(out, 'game'), { recursive: true }).filter((f) => statSync(join(out, 'game', f)).isFile());
+const shotFiles = readdirSync(join(out, 'screenshots')).filter((f) => /\.(png|jpe?g)$/i.test(f));
+if (!dossier || gameFiles.length === 0 || shotFiles.length === 0) {
+  throw new Error(`Warung Kilat build incomplete: ${gameFiles.length} game files, ${shotFiles.length} screenshots`);
+}
+console.log(`Warung Kilat: ${gameFiles.length} game files, ${shotFiles.length} screenshots, dossier ${statSync(dossierPath).size} bytes -> ${out}`);
