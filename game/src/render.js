@@ -25,6 +25,42 @@ function text(ctx, str, x, y, size, color, weight, align) {
   ctx.fillText(str, x, y);
 }
 
+/** Soft ellipse shadow on the floor, centred at (x, y). */
+function shadow(ctx, x, y, rx, ry) {
+  ctx.fillStyle = 'rgba(43,29,18,0.18)';
+  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+}
+
+/**
+ * A counter block with a 2.5D feel: a soft floor shadow and a darker front face
+ * below the top face, so the block reads as a solid box instead of a flat card.
+ * The clickable rect stays the top face (r.x, r.y, r.w, r.h).
+ */
+function counter3d(ctx, r) {
+  shadow(ctx, r.x + r.w / 2, r.y + r.h + 8, r.w * 0.42, 7);
+  ctx.fillStyle = '#6b4423';
+  rr(ctx, r.x, r.y + r.h - 6, r.w, 16, 8); ctx.fill();
+  ctx.fillStyle = PALETTE.counter;
+  rr(ctx, r.x, r.y, r.w, r.h, 10); ctx.fill();
+}
+
+/** The assembly plate with its items, centred at (cx, cy). Shared by both views. */
+function drawPlateDish(ctx, cx, cy, items) {
+  ctx.fillStyle = '#f7ead0';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 84, 52, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#d9c48f'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.ellipse(cx, cy, 84, 52, 0, 0, Math.PI * 2); ctx.stroke();
+  if (items.length === 0) {
+    text(ctx, 'piring kosong', cx, cy + 5, 13, PALETTE.muted, 600, 'center');
+    return;
+  }
+  const spots = [[-34, -12], [30, -14], [-6, 14], [44, 16]];
+  items.forEach((item, i) => {
+    const [dx, dy] = spots[i % spots.length];
+    drawIngredientIcon(ctx, item, cx + dx, cy + dy, 20);
+  });
+}
+
 /** Draw one ingredient or cooked item as a small picture, centred at (x, y). */
 export function drawIngredientIcon(ctx, id, x, y, r) {
   ctx.save();
@@ -82,13 +118,62 @@ export function drawIngredientIcon(ctx, id, x, y, r) {
   ctx.restore();
 }
 
-function drawBackground(ctx) {
+function drawBackground(ctx, world) {
   ctx.fillStyle = PALETTE.wall;
   ctx.fillRect(0, 0, FIELD.width, FIELD.height);
+  if (world.view === 'front') {
+    // The warung's front: a big window onto the street, a hanging lamp, a sign.
+    // It sits where the order board is in the top view (the board is hidden here).
+    ctx.fillStyle = '#7ec8e3';
+    rr(ctx, 380, 64, 520, 116, 16); ctx.fill();
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath(); ctx.arc(820, 106, 24, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#8b9bb4';
+    ctx.fillRect(400, 140, 110, 40);
+    ctx.fillRect(530, 120, 130, 60);
+    ctx.fillRect(700, 148, 90, 32);
+    ctx.strokeStyle = '#5a4028'; ctx.lineWidth = 8;
+    rr(ctx, 380, 64, 520, 116, 16); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(640, 64); ctx.lineTo(640, 180); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(380, 120); ctx.lineTo(900, 120); ctx.stroke();
+    ctx.fillStyle = '#3d2b1f';
+    rr(ctx, 60, 100, 220, 56, 10); ctx.fill();
+    text(ctx, 'WARUNG', 170, 126, 22, '#ffd166', 800, 'center');
+    text(ctx, 'BUKA • MASAK CEPAT', 170, 146, 11, '#e8cba0', 600, 'center');
+    ctx.fillStyle = '#fff6df';
+    rr(ctx, 1000, 100, 220, 120, 10); ctx.fill();
+    text(ctx, 'MENU', 1110, 126, 14, PALETTE.muted, 800, 'center');
+    text(ctx, 'Nasi Ayam $8', 1020, 152, 13, PALETTE.text, 600);
+    text(ctx, 'Nasi Telur $6', 1020, 172, 13, PALETTE.text, 600);
+    text(ctx, 'Nasi Komplit $14', 1020, 192, 13, PALETTE.text, 600);
+    ctx.strokeStyle = '#5a4028'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(330, 64); ctx.lineTo(330, 90); ctx.stroke();
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath(); ctx.arc(330, 112, 16, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,209,102,0.25)';
+    ctx.beginPath(); ctx.arc(330, 112, 30, 0, Math.PI * 2); ctx.fill();
+    drawFloor(ctx);
+    return;
+  }
+  // Top view: the kitchen wall, and a floor with a slight perspective — the tile
+  // seams fan out toward the viewer, so the room reads as a space, not a card.
   ctx.fillStyle = PALETTE.wallStripe;
   for (let x = 0; x < FIELD.width; x += 96) ctx.fillRect(x, 0, 48, FIELD.height);
+  drawFloor(ctx);
+}
+
+/** The floor strip at the bottom, with perspective seams fanning outward. */
+function drawFloor(ctx) {
   ctx.fillStyle = PALETTE.floor;
   ctx.fillRect(0, 640, FIELD.width, 80);
+  ctx.strokeStyle = 'rgba(0,0,0,0.14)'; ctx.lineWidth = 2;
+  for (let i = 0; i <= 8; i += 1) {
+    ctx.beginPath();
+    ctx.moveTo(80 + i * 140, 640);
+    ctx.lineTo(20 + i * 155, 720);
+    ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(0, 680); ctx.lineTo(FIELD.width, 680); ctx.stroke();
   ctx.fillStyle = 'rgba(0,0,0,0.08)';
   ctx.fillRect(0, 636, FIELD.width, 4);
 }
@@ -176,8 +261,7 @@ function drawSlot(ctx, x, y, w, h, job, label) {
 function drawStations(ctx, world, now) {
   const { rice, fry, chop, plate, serve } = LAYOUT;
   // Rice cooker
-  ctx.fillStyle = PALETTE.counter;
-  rr(ctx, rice.x, rice.y, rice.w, rice.h, 10); ctx.fill();
+  counter3d(ctx, rice);
   ctx.fillStyle = '#9aa5b1';
   rr(ctx, rice.x + 30, rice.y + 34, 120, 66, 12); ctx.fill();
   ctx.fillStyle = '#6b7280';
@@ -192,40 +276,24 @@ function drawStations(ctx, world, now) {
   text(ctx, 'klik: ambil nasi', rice.x + 90, rice.y + 140, 11, '#e8cba0', 600, 'center');
 
   // Wok
-  ctx.fillStyle = PALETTE.counter;
-  rr(ctx, fry.x, fry.y, fry.w, fry.h, 10); ctx.fill();
+  counter3d(ctx, fry);
   text(ctx, 'WAJAN — GORENG', fry.x + 14, fry.y + 22, 13, '#fff8e7', 800);
   drawSlot(ctx, fry.x + 14, fry.y + 34, 120, 100, world.fry[0], 'slot 1');
   drawSlot(ctx, fry.x + 146, fry.y + 34, 120, 100, world.fry[1], 'slot 2');
 
   // Chopping board
-  ctx.fillStyle = PALETTE.counter;
-  rr(ctx, chop.x, chop.y, chop.w, chop.h, 10); ctx.fill();
+  counter3d(ctx, chop);
   text(ctx, 'TALENAN — POTONG', chop.x + 14, chop.y + 22, 13, '#fff8e7', 800);
   drawSlot(ctx, chop.x + 14, chop.y + 34, 192, 100, world.chop, 'kosong');
 
   // Assembly plate
-  ctx.fillStyle = PALETTE.counter;
-  rr(ctx, plate.x, plate.y, plate.w, plate.h, 10); ctx.fill();
+  counter3d(ctx, plate);
   text(ctx, 'PIRING SAJI', plate.x + 14, plate.y + 22, 13, '#fff8e7', 800);
-  ctx.fillStyle = '#f7ead0';
-  ctx.beginPath(); ctx.ellipse(plate.x + 110, plate.y + 86, 84, 52, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#d9c48f'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.ellipse(plate.x + 110, plate.y + 86, 84, 52, 0, 0, Math.PI * 2); ctx.stroke();
-  if (world.plate.length === 0) {
-    text(ctx, 'piring kosong', plate.x + 110, plate.y + 90, 13, PALETTE.muted, 600, 'center');
-  } else {
-    const spots = [[-34, -12], [30, -14], [-6, 14], [44, 16]];
-    world.plate.forEach((item, i) => {
-      const [dx, dy] = spots[i % spots.length];
-      drawIngredientIcon(ctx, item, plate.x + 110 + dx, plate.y + 86 + dy, 20);
-    });
-  }
+  drawPlateDish(ctx, plate.x + 110, plate.y + 86, world.plate);
 
   // Serve window
+  counter3d(ctx, serve);
   const match = matchingTicket(world);
-  ctx.fillStyle = PALETTE.counter;
-  rr(ctx, serve.x, serve.y, serve.w, serve.h, 10); ctx.fill();
   text(ctx, 'JENDELA SAJI', serve.x + 14, serve.y + 22, 13, '#fff8e7', 800);
   const glow = match && Math.floor(now * 3) % 2 === 0;
   ctx.fillStyle = match ? (glow ? '#34c0a9' : PALETTE.serveReady) : PALETTE.serveIdle;
@@ -244,7 +312,10 @@ function drawStations(ctx, world, now) {
 
 function drawCookAndBins(ctx, world, now) {
   const { cook, bins, bin, hands } = LAYOUT;
-  // Wooden counter the cook stands behind
+  // Wooden counter the cook stands behind — same 2.5D box as the stations.
+  shadow(ctx, cook.x + cook.w / 2, cook.y + 96 + 54 + 8, cook.w * 0.42, 8);
+  ctx.fillStyle = '#6b4423';
+  rr(ctx, cook.x, cook.y + 96 + 48, cook.w, 16, 8); ctx.fill();
   ctx.fillStyle = PALETTE.counterTop;
   rr(ctx, cook.x, cook.y + 96, cook.w, 54, 10); ctx.fill();
   ctx.fillStyle = PALETTE.counter;
@@ -252,6 +323,7 @@ function drawCookAndBins(ctx, world, now) {
   // The cook
   const cx = cook.x + 110;
   const cy = cook.y + 60;
+  shadow(ctx, cx, cy + 56, 44, 9);
   ctx.fillStyle = '#fff8e7';
   ctx.beginPath(); ctx.arc(cx, cy - 34, 26, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#fff8e7';
@@ -280,8 +352,7 @@ function drawCookAndBins(ctx, world, now) {
   raws.forEach((id, i) => {
     const x = bins.x + i * (bin.w + bin.gap);
     const def = INGREDIENTS[id];
-    ctx.fillStyle = PALETTE.counter;
-    rr(ctx, x, bins.y, bin.w, bin.h, 10); ctx.fill();
+    counter3d(ctx, { x, y: bins.y, w: bin.w, h: bin.h });
     drawIngredientIcon(ctx, id, x + 40, bins.y + 52, 24);
     text(ctx, def.name, x + 76, bins.y + 44, 17, '#fff8e7', 800);
     text(ctx, def.station === 'fry' ? '→ wajan' : '→ talenan', x + 76, bins.y + 66, 12, '#e8cba0', 600);
@@ -301,7 +372,7 @@ function drawCookAndBins(ctx, world, now) {
     }
     text(ctx, `${world.hands.length}/2`, hands.x + hands.w - 14, hands.y + 24, 12, '#ffd166', 700, 'right');
   }
-  text(ctx, 'Klik bahan → klik stasiun → klik piring → SAJIKAN.  [1] nasi  [Spasi] sajikan  [P] jeda', LAYOUT.help.x, LAYOUT.help.y + 22, 14, '#3d2b1f', 600);
+  text(ctx, 'Klik bahan → klik stasiun → klik piring → SAJIKAN.  [1] nasi  [Spasi] sajikan  [V] ganti view  [P] jeda', LAYOUT.help.x, LAYOUT.help.y + 22, 14, '#3d2b1f', 600);
 }
 
 function drawFlashes(ctx, world) {
@@ -350,13 +421,102 @@ function drawGameOver(ctx, world, best) {
   text(ctx, 'Tekan R untuk main lagi', 640, 440, 22, '#e8cba0', 700, 'center');
 }
 
+const CUSTOMER_SKINS = ['#f2c89b', '#e8b88a', '#d9a06b', '#c98d5f'];
+const CUSTOMER_SHIRTS = ['#e63946', '#2a9d8f', '#f4a261', '#7b5ea7'];
+const CUSTOMER_HAIRS = ['#2b1d12', '#5a4028', '#8b5a2b', '#2b1d12'];
+
+/** One waiting customer in the front view: patience bar, dish name, face, shirt. */
+function drawCustomer(ctx, ticket, cx, now, isMatch) {
+  const dish = DISHES[ticket.dishId];
+  const frac = Math.max(0, ticket.patience / ticket.maxPatience);
+  const i = ticket.id % 4;
+  ctx.fillStyle = '#e5d5ae';
+  rr(ctx, cx - 60, 182, 120, 8, 4); ctx.fill();
+  ctx.fillStyle = frac > 0.5 ? PALETTE.green : frac > 0.3 ? '#f4a261' : PALETTE.red;
+  rr(ctx, cx - 60, 182, 120 * frac, 8, 4); ctx.fill();
+  text(ctx, dish.name, cx, 210, 13, PALETTE.text, 800, 'center');
+  shadow(ctx, cx, 378, 56, 8);
+  ctx.fillStyle = CUSTOMER_SKINS[i];
+  ctx.beginPath(); ctx.arc(cx, 252, 34, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = CUSTOMER_HAIRS[i];
+  ctx.beginPath(); ctx.arc(cx, 246, 34, Math.PI, 0); ctx.fill();
+  ctx.fillRect(cx - 34, 240, 68, 8);
+  ctx.fillStyle = '#2b1d12';
+  ctx.beginPath(); ctx.arc(cx - 12, 252, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 12, 252, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#2b1d12'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(cx, 264, 10, 0.2, Math.PI - 0.2); ctx.stroke();
+  ctx.fillStyle = CUSTOMER_SHIRTS[i];
+  rr(ctx, cx - 52, 292, 104, 112, 18); ctx.fill();
+  if (isMatch) {
+    ctx.strokeStyle = Math.floor(now * 3) % 2 === 0 ? '#34c0a9' : PALETTE.serveReady;
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(cx, 252, 44, 0, Math.PI * 2); ctx.stroke();
+    text(ctx, 'SIAP DISAJIKAN', cx, 176, 12, PALETTE.serveReady, 800, 'center');
+  }
+}
+
+/** An empty stool where no customer waits yet. */
+function drawEmptyStool(ctx, cx) {
+  text(ctx, 'kursi kosong', cx, 210, 13, PALETTE.muted, 600, 'center');
+  ctx.fillStyle = '#8b5a2b';
+  ctx.beginPath(); ctx.ellipse(cx, 330, 46, 12, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(cx - 30, 338, 8, 60);
+  ctx.fillRect(cx + 22, 338, 8, 60);
+}
+
+/** The front view: customers behind the serving counter, plate + serve on it. */
+function drawFrontScene(ctx, world, now) {
+  const { front } = LAYOUT;
+  const match = matchingTicket(world);
+  for (let i = 0; i < 4; i += 1) {
+    const cx = front.custRow.x + i * (front.customer.w + front.customer.gap) + front.customer.w / 2;
+    const ticket = world.tickets[i];
+    if (ticket) drawCustomer(ctx, ticket, cx, now, match && match.id === ticket.id);
+    else drawEmptyStool(ctx, cx);
+  }
+  counter3d(ctx, front.counter);
+  ctx.fillStyle = '#a9713d';
+  ctx.fillRect(front.counter.x, front.counter.y, front.counter.w, 6);
+  drawPlateDish(ctx, front.plate.x + 150, front.plate.y + 44, world.plate);
+  const glow = match && Math.floor(now * 3) % 2 === 0;
+  ctx.fillStyle = match ? (glow ? '#34c0a9' : PALETTE.serveReady) : PALETTE.serveIdle;
+  rr(ctx, front.serve.x, front.serve.y, front.serve.w, front.serve.h, 12); ctx.fill();
+  text(ctx, match ? 'SAJIKAN!  ⏎' : 'SAJIKAN', front.serve.x + front.serve.w / 2, front.serve.y + 46, 22, '#ffffff', 800, 'center');
+  if (world.lastServed) {
+    const dish = DISHES[world.lastServed.dishId];
+    text(ctx, `✓ ${dish.name}  +${world.lastServed.coins} koin`, 640, 560, 16, '#ffd166', 700, 'center');
+  } else if (match) {
+    text(ctx, 'Piring cocok dengan pesanan pelanggan — sajikan ke mereka!', 640, 560, 15, '#ffd166', 700, 'center');
+  } else {
+    text(ctx, 'Rakit pesanan di dapur (view atas), lalu sajikan di sini', 640, 560, 14, '#e8cba0', 600, 'center');
+  }
+  text(ctx, 'View depan — klik pelanggan untuk menyajikan ke mereka  •  [V] kembali ke dapur', 640, 596, 13, '#3d2b1f', 600, 'center');
+}
+
+/** The provisional view switch (bottom-right, both views). Transition TBD. */
+function drawViewToggle(ctx, world) {
+  const t = LAYOUT.viewToggle;
+  ctx.fillStyle = PALETTE.board;
+  rr(ctx, t.x, t.y, t.w, t.h, 10); ctx.fill();
+  ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 2;
+  rr(ctx, t.x, t.y, t.w, t.h, 10); ctx.stroke();
+  text(ctx, world.view === 'front' ? '👁 ATAS' : '👁 DEPAN', t.x + t.w / 2, t.y + 26, 15, '#ffd166', 800, 'center');
+}
+
 /** Draw one frame of the game. `screen` is title, play or over; `now` drives animation. */
 export function draw(ctx, world, screen, now, best) {
-  drawBackground(ctx);
-  drawBoard(ctx, world, now);
-  drawStations(ctx, world, now);
-  drawCookAndBins(ctx, world, now);
+  drawBackground(ctx, world);
+  // In the front view the customers ARE the order board, so the board is hidden
+  // and the warung's window, sign and menu stay visible.
+  if (world.view !== 'front') drawBoard(ctx, world, now);
+  if (world.view === 'front') drawFrontScene(ctx, world, now);
+  else {
+    drawStations(ctx, world, now);
+    drawCookAndBins(ctx, world, now);
+  }
   drawHud(ctx, world);
+  drawViewToggle(ctx, world);
   drawFlashes(ctx, world);
   drawBanner(ctx, world);
   if (screen === SCREEN_TITLE) drawTitle(ctx, world, best);

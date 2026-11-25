@@ -75,6 +75,17 @@ export const LAYOUT = {
   bin:        { w: 220,  h: 104, gap: 16 },
   hands:      { x: 1024, y: 524, w: 216,  h: 104 },
   help:       { x: 40,   y: 652, w: 1200, h: 56 },
+  // Front view (view depan): customers behind the counter, plate + serve on it.
+  // The toggle button sits bottom-right in both views (provisional switch; the
+  // transition method is decided after the preview).
+  viewToggle: { x: 1140, y: 656, w: 120,  h: 40 },
+  front: {
+    counter:  { x: 40,   y: 400, w: 1200, h: 110 },
+    plate:    { x: 120,  y: 412, w: 300,  h: 86 },
+    serve:    { x: 980,  y: 408, w: 220,  h: 72 },
+    customer: { w: 220,  h: 200, gap: 24 },
+    custRow:  { x: 90,   y: 176 },
+  },
 };
 
 export const PALETTE = {

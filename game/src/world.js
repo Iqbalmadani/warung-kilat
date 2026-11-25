@@ -51,6 +51,9 @@ export function createWorld(seed) {
     spawnIn: 6,
     flashes: [],
     lastServed: null,
+    // Camera: 'top' (dapur, dari atas) or 'front' (konter, dari depan). The rules
+    // never depend on it; only the renderer and the click zones read it.
+    view: 'top',
   };
   return world;
 }
@@ -183,11 +186,11 @@ export function removeFromPlate(world, index) {
   return true;
 }
 
-/** Serve the plate to the oldest ticket it matches. Returns the coins earned, or 0. */
-export function servePlate(world) {
+/** Serve the plate to one specific ticket, when the plate matches its dish. */
+export function serveTicket(world, ticketId) {
   if (world.over) return 0;
-  const ticket = matchingTicket(world);
-  if (!ticket) return 0;
+  const ticket = world.tickets.find((t) => t.id === ticketId);
+  if (!ticket || !sameMultiset(world.plate, DISHES[ticket.dishId].needs)) return 0;
   const dish = DISHES[ticket.dishId];
   const patienceLeft = Math.max(0, ticket.patience / ticket.maxPatience);
   const tip = Math.round(dish.price * 0.5 * patienceLeft);
@@ -202,6 +205,13 @@ export function servePlate(world) {
   world.tickets = world.tickets.filter((t) => t.id !== ticket.id);
   flash(world, `+${earned} koin`, 'good');
   return earned;
+}
+
+/** Serve the plate to the oldest ticket it matches. Returns the coins earned, or 0. */
+export function servePlate(world) {
+  const ticket = matchingTicket(world);
+  if (!ticket) return 0;
+  return serveTicket(world, ticket.id);
 }
 
 /** Advance the world by `dt` seconds: tickets, patience, cooking, the day clock. */

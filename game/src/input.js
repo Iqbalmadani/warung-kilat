@@ -2,7 +2,7 @@
 // window, and becomes one call into the world's rules.
 import { LAYOUT } from './config.js';
 import {
-  takeRice, takeRaw, placeInStation, collectFromStation, addToPlate, removeFromPlate, servePlate,
+  takeRice, takeRaw, placeInStation, collectFromStation, addToPlate, removeFromPlate, servePlate, serveTicket,
 } from './world.js';
 
 function inside(x, y, rect) {
@@ -11,9 +11,33 @@ function inside(x, y, rect) {
 
 const RAW_BINS = ['ayam', 'telur', 'sayur', 'cabai'];
 
+/** Flip the camera between the kitchen (top) and the counter (front). */
+function toggleView(world) {
+  world.view = world.view === 'front' ? 'top' : 'front';
+  return true;
+}
+
 /** Handle a click at logical-field coordinates. Returns true when it did something. */
 export function handleClick(world, x, y) {
-  const { rice, fry, chop, plate, serve, bins, bin } = LAYOUT;
+  const { rice, fry, chop, plate, serve, bins, bin, viewToggle, front } = LAYOUT;
+  if (inside(x, y, viewToggle)) return toggleView(world);
+  if (world.view === 'front') {
+    if (inside(x, y, front.serve)) return servePlate(world) > 0;
+    for (let i = 0; i < 4; i += 1) {
+      const rect = {
+        x: front.custRow.x + i * (front.customer.w + front.customer.gap),
+        y: front.custRow.y,
+        w: front.customer.w,
+        h: front.customer.h,
+      };
+      if (inside(x, y, rect)) {
+        const ticket = world.tickets[i];
+        if (ticket) return serveTicket(world, ticket.id) > 0;
+        return false;
+      }
+    }
+    return false;
+  }
   if (inside(x, y, rice)) return takeRice(world);
   if (inside(x, y, fry)) {
     const slot = x < fry.x + fry.w / 2 ? 0 : 1;
@@ -54,6 +78,7 @@ export function handleKey(world, key, screen) {
   if (key === '3') return takeRaw(world, 'telur') ? 'took' : null;
   if (key === '4') return takeRaw(world, 'sayur') ? 'took' : null;
   if (key === '5') return takeRaw(world, 'cabai') ? 'took' : null;
+  if (key === 'v' || key === 'V') return toggleView(world) ? 'took' : null;
   if (key === 'f' || key === 'F') {
     for (let s = 0; s < 2; s += 1) if (collectFromStation(world, 'fry', s)) return 'took';
     return collectFromStation(world, 'chop', 0) ? 'took' : null;
