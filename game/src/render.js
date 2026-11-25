@@ -5,7 +5,7 @@
 import {
   FIELD, FONT, PALETTE, NAV_TABS,
   INGREDIENTS, RECIPES, CUSTOMER_STYLES, STATIONS, dishKey,
-  BAR_SLOTS_X, FRONT_SLOTS_X, MAP_ZONES,
+  BAR_SLOTS_X, FRONT_SLOTS_X, MAP_ZONES, PLOT_SERVICE, PLOT_DINING,
 } from './config.js';
 import {
   SCREEN_TITLE, SCREEN_PLAY, SCREEN_OVER,
@@ -582,12 +582,12 @@ function drawWorld(ctx, world, now, cam) {
   rr(ctx, 14, 22, 1972, 1086, 26);
   ctx.fillStyle = '#4b2f1c';
   ctx.fill();
-  // The floors: the kitchen square is a soft sage checkerboard; the dining
-  // room is ONE L of warm wood planks wrapping around it. No interior walls
-  // — the rooms are open to each other, the floors alone mark them.
-  checkerFloor(ctx, 60, 60, 900, 500, 50, '#DCE8D0', '#C9D9B8');
-  woodFloor(ctx, 1000, 60, 940, 500);
-  woodFloor(ctx, 60, 620, 1880, 440);
+  // The floors: exactly two plots that tile the interior with no gaps.
+  // Plot 1 (kitchen + service) is a soft sage checkerboard; plot 2 (the
+  // big dining L) is warm wood planks. The floor change alone marks the
+  // rooms — no walls, no dark gaps between them.
+  checkerFloor(ctx, PLOT_SERVICE.x, PLOT_SERVICE.y, PLOT_SERVICE.w, PLOT_SERVICE.h, 40, '#DCE8D0', '#C9D9B8');
+  PLOT_DINING.forEach((r) => woodFloor(ctx, r.x, r.y, r.w, r.h));
   // The top trim, and the two doors on the bottom edge: MASUK near the
   // kitchen (left), KELUAR at the far end (right). The strip along the
   // bottom stays clear of tables so both doors are free.

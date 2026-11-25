@@ -1,12 +1,13 @@
 // Warung Kilat v6 — every tuning number, colour, dish and layout value in one
 // place. The game lives in ONE continuous world (2000x1125) that the camera
-// zooms and pans across. The floor plan is open: a square kitchen room
-// top-left and ONE L-shaped dining room wrapping around it — no interior
-// walls, just different floors, so the rooms read at a glance. The entrance
-// (MASUK) is on the bottom edge near the kitchen, the exit (KELUAR) is on the
-// bottom edge at the far end, and the walkway along the bottom stays clear of
-// tables. The screen is a fixed 1280x720 window onto that world; the renderer
-// scales it to the browser window.
+// zooms and pans across. The floor plan is exactly TWO plots that tile the
+// interior (60,60,1880,1000) with no gaps and no walls between them: plot 1
+// is the kitchen + customer-service square top-left, plot 2 is ONE big
+// L-shaped dining room wrapping around it, where customers eat and order.
+// The entrance (MASUK) is on the bottom edge near the kitchen, the exit
+// (KELUAR) is on the bottom edge at the far end, and the walkway along the
+// bottom stays clear of tables. The screen is a fixed 1280x720 window onto
+// that world; the renderer scales it to the browser window.
 export const FIELD = { width: 1280, height: 720 };
 export const WORLD = { width: 2000, height: 1125 };
 
@@ -75,6 +76,16 @@ export const CUSTOMER_STYLES = [
   { shirt: '#7FAE7F', skin: '#c58b5c', hair: '#3a2418', kind: 'cap', cap: '#D9A45B' },
   { shirt: '#C9A86B', skin: '#f0c8a0', hair: '#2f8f9a', kind: 'hijab' },
   { shirt: '#B57A9B', skin: '#dba77a', hair: '#4a2a1a', kind: 'hair' },
+];
+
+/** The two plots that tile the interior (60,60,1880,1000) with no gaps and no
+ *  overlap: plot 1 is the kitchen + customer-service square (stations, bins,
+ *  serving table, bar and the bar customers), plot 2 is the big L where
+ *  customers eat and order (the right column and the bottom row). */
+export const PLOT_SERVICE = { x: 60, y: 60, w: 900, h: 680 };
+export const PLOT_DINING = [
+  { x: 960, y: 60, w: 980, h: 1000 },
+  { x: 60, y: 740, w: 1880, h: 320 },
 ];
 
 /** The server (pelayan) who works the customers: he waits behind the bar in

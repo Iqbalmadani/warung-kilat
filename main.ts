@@ -3,17 +3,16 @@
 // offline (game/index.html and its ES modules, no library and no network request) — and this
 // program hands it in. It copies game/ and screenshots/ from beside this file to /output and
 // writes /output/dossier.json, the summary the judge reads, with the vendored make.fun
-// library. The game: one continuous warung world (2000x1125) — a square kitchen and one
-// L-shaped dining room wrapping around it, open plan with no interior walls, the entrance
-// near the kitchen and a free exit at the far end — that the camera zooms and pans across
-// in three views: the map from above, the kitchen zoomed in (still from above), and the
-// counter from the front. Click a station and the chef walks there to work it: rice
-// cooker, two woks and a chopping board feed one serving plate; a server (pelayan) waits
-// in the kitchen square and walks each served plate over to its customer. Tickets carry
+// library. The game: one continuous warung world (2000x1125) — exactly two plots that
+// tile the interior with no gaps: plot 1 is the kitchen + customer-service square
+// (stations, bins, serving table, bar and the bar customers), plot 2 is one big
+// L-shaped dining room where customers eat and order; the entrance is near the kitchen
+// and a free exit sits at the far end — that the camera zooms and pans across in three
+// views: the map from above, the kitchen zoomed in (still from above), and the counter
+// from the front. Click a station and the chef walks there to work it: rice cooker, two
+// woks and a chopping board feed one serving plate; a server (pelayan) waits in the
+// kitchen square and walks each served plate over to its customer. Tickets carry
 // patience, serving pays price plus a patience tip, and a missed ticket costs a heart.
-// 5 dishes, levels that get busier every 4 serves, keyboard + mouse play. The palette is
-// deliberately calm — warm neutrals, a muted sage kitchen floor, soft wood, one soft gold
-// for highlights, low saturation throughout — so the screen stays easy on the eyes.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
