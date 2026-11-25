@@ -1,8 +1,12 @@
-// Warung Kilat v5 — every tuning number, colour, dish and layout value in one
+// Warung Kilat v6 — every tuning number, colour, dish and layout value in one
 // place. The game lives in ONE continuous world (2000x1125) that the camera
-// zooms and pans across: the kitchen room top-left, the dining room right and
-// bottom, the serving bar between them. The screen is a fixed 1280x720 window
-// onto that world; the renderer scales it to the browser window.
+// zooms and pans across. The floor plan is open: a square kitchen room
+// top-left and ONE L-shaped dining room wrapping around it — no interior
+// walls, just different floors, so the rooms read at a glance. The entrance
+// (MASUK) is on the bottom edge near the kitchen, the exit (KELUAR) is on the
+// bottom edge at the far end, and the walkway along the bottom stays clear of
+// tables. The screen is a fixed 1280x720 window onto that world; the renderer
+// scales it to the browser window.
 export const FIELD = { width: 1280, height: 720 };
 export const WORLD = { width: 2000, height: 1125 };
 
@@ -61,15 +65,30 @@ export function dishKey(items) {
   return items.slice().sort().join();
 }
 
-/** The six customer looks: shirt, skin, hair and head style (hair, peci, hijab, cap). */
+/** The six customer looks: shirt, skin, hair and head style (hair, peci, hijab, cap).
+ *  All shirts are muted (low saturation) so no two customers vibrate against
+ *  each other or against the floors — see the palette note below. */
 export const CUSTOMER_STYLES = [
-  { shirt: '#d9534f', skin: '#e6b48a', hair: '#2b1b12', kind: 'hair' },
-  { shirt: '#3b7dd8', skin: '#d6a070', hair: '#1b1b1b', kind: 'peci' },
-  { shirt: '#8e5cc4', skin: '#efc7a0', hair: '#7a58a8', kind: 'hijab' },
-  { shirt: '#2f9e6a', skin: '#c58b5c', hair: '#3a2418', kind: 'cap', cap: '#e8a33d' },
-  { shirt: '#e08a2c', skin: '#f0c8a0', hair: '#2f8f9a', kind: 'hijab' },
-  { shirt: '#b84a8a', skin: '#dba77a', hair: '#4a2a1a', kind: 'hair' },
+  { shirt: '#C97B74', skin: '#e6b48a', hair: '#2b1b12', kind: 'hair' },
+  { shirt: '#7A9BB5', skin: '#d6a070', hair: '#1b1b1b', kind: 'peci' },
+  { shirt: '#9B7FB5', skin: '#efc7a0', hair: '#7a58a8', kind: 'hijab' },
+  { shirt: '#7FAE7F', skin: '#c58b5c', hair: '#3a2418', kind: 'cap', cap: '#D9A45B' },
+  { shirt: '#C9A86B', skin: '#f0c8a0', hair: '#2f8f9a', kind: 'hijab' },
+  { shirt: '#B57A9B', skin: '#dba77a', hair: '#4a2a1a', kind: 'hair' },
 ];
+
+/** The server (pelayan) who works the customers: he waits behind the bar in
+ *  the kitchen square and walks a plate over to whoever was just served. */
+export const SERVER_HOME = { x: 905, y: 440 };
+/** The corner at the end of the bar the server turns at to reach the dining side. */
+export const BAR_END = { x: 980, y: 440 };
+
+/** The doors on the bottom edge: entrance near the kitchen (left), exit at
+ *  the far end (right). The strip along the bottom stays clear of tables. */
+export const DOORS = {
+  masuk:  { x: 180,  y: 1056, w: 100, h: 52, label: 'MASUK' },
+  keluar: { x: 1720, y: 1056, w: 100, h: 52, label: 'KELUAR' },
+};
 
 /**
  * The kitchen stations, in world coordinates. `shape` is the clickable area
@@ -107,6 +126,23 @@ export const NAV_TABS = [
   { view: 'counter', key: '3', label: 'KONTER', x: 1156, y: 7, w: 110, h: 30 },
 ];
 
+/**
+ * The palette, chosen for comfort, not for punch — the colour-psychology
+ * literature is consistent on what makes a screen easy to sit with:
+ * warm neutrals as the base (cream, sand, warm brown) because they feel
+ * calm and familiar; one muted green (sage) for the kitchen floor because
+ * green is the colour people report as most restful and it cuts eye strain;
+ * warm wood for the dining room because warm tones read as appetising and
+ * social; a single soft gold for highlights because yellow draws the eye
+ * without shouting. Saturation stays low everywhere — no pure reds, no
+ * neon greens, no two saturated complements side by side — because
+ * high-saturation contrast is what makes a screen feel loud and tiring.
+ * Meaning is carried by lightness, not by hue: text is dark on cream
+ * (high lightness contrast, easy to read), warnings use a muted brick
+ * instead of a screaming red, and "ready" is a soft leaf green instead
+ * of a neon one. Dishes stay distinguishable by shape as well as colour,
+ * so nothing depends on hue alone.
+ */
 export const PALETTE = {
   dark: '#16120f',
   board: '#2b1c12',
@@ -114,10 +150,28 @@ export const PALETTE = {
   gold: '#ffd36b',
   text: '#2b1c12',
   muted: '#7a6a58',
-  green: '#5fb84a',
-  red: '#e04a3a',
-  orange: '#f0a040',
-  teal: '#2a9d8f',
+  green: '#7FB069',
+  red: '#C96A5A',
+  orange: '#D9A45B',
+  teal: '#7FA8A0',
+  kitchenFloorA: '#DCE8D0',
+  kitchenFloorB: '#C9D9B8',
+  diningWood: '#C89A6B',
+  woodDark: '#A87F52',
+  counterWood: '#B08A5E',
+  counterWoodLight: '#C9A878',
+  barWood: '#9A6E42',
+  barWoodLight: '#B98F5C',
+  wallBrown: '#5b3a24',
+  frameBrown: '#4b2f1c',
+  frontWallTop: '#DEB27C',
+  frontWallBottom: '#C99A67',
+  tileRed: '#B0603F',
+  heart: '#D97B8A',
+  chefShirt: '#C65D4E',
+  chefShirtDark: '#9A5247',
+  ready: '#6FA96B',
+  signRed: '#8A4A3A',
 };
 
 export const FONT = '"Segoe UI",system-ui,-apple-system,Roboto,"Noto Sans",sans-serif';

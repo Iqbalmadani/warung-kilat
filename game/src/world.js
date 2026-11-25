@@ -4,7 +4,7 @@
 import {
   STEP, HEARTS, CHEF_SPEED, WALK_SECONDS, CAMERAS, VIEW_ORDER,
   INGREDIENTS, RAW_INGREDIENTS, RECIPES, recipesFor, dishKey,
-  CUSTOMER_STYLES, STATIONS, BAR_SLOTS_X,
+  CUSTOMER_STYLES, STATIONS, BAR_SLOTS_X, SERVER_HOME, BAR_END,
   patienceSeconds, maxCustomers,
 } from './config.js';
 import { mulberry32 } from './random.js';
@@ -37,6 +37,9 @@ export function createWorld(seed) {
     pops: [],
     toast: null,
     chef: { x: 510, y: 345, angle: -Math.PI / 2, walk: 0, tx: null, ty: null, fx: 510, fy: 200, act: null },
+    // The server (pelayan) who works the customers: he waits at his post in
+    // the kitchen square and walks a plate over to whoever was just served.
+    server: { x: SERVER_HOME.x, y: SERVER_HOME.y, path: [], carry: null, mode: 'idle' },
   };
   return world;
 }
@@ -247,6 +250,7 @@ export function serve(world, customer) {
     world.plate = [];
     pop(world, BAR_SLOTS_X[customer.slot], 660, 0, 0, `+$${paid}`, '#ffd36b');
     showToast(world, `Pesanan sesuai! +$${paid}`, 'good');
+    sendServer(world, customer.slot);
     if (world.served % 4 === 0) {
       world.level += 1;
       showToast(world, `HARI ${world.level} — makin rame!`, 'good');
@@ -259,6 +263,47 @@ export function serve(world, customer) {
 }
 
 export const EVENT_OVER = 1;
+
+/** Send the server to a bar customer with the plate: around the end of the
+ *  bar (x 980), down the dining side, and up to the customer's slot. When he
+ *  arrives the plate is delivered and he walks back to his post. */
+function sendServer(world, slot) {
+  const s = world.server;
+  const tx = BAR_SLOTS_X[slot];
+  s.path = s.y > 600
+    ? [[tx, 730]]
+    : [[BAR_END.x, BAR_END.y], [BAR_END.x, 730], [tx, 730]];
+  s.carry = 'plate';
+  s.mode = 'toCustomer';
+}
+
+/** Walk the server along his path, one waypoint at a time. */
+function stepServer(world, dt) {
+  const s = world.server;
+  if (!s.path.length) return;
+  const [tx, ty] = s.path[0];
+  const dx = tx - s.x;
+  const dy = ty - s.y;
+  const dist = Math.hypot(dx, dy);
+  const step = CHEF_SPEED * 0.9 * dt;
+  if (dist <= step) {
+    s.x = tx;
+    s.y = ty;
+    s.path.shift();
+    if (!s.path.length) {
+      if (s.mode === 'toCustomer') {
+        s.carry = null;
+        s.mode = 'returning';
+        s.path = [[BAR_END.x, 730], [BAR_END.x, BAR_END.y], [SERVER_HOME.x, SERVER_HOME.y]];
+      } else {
+        s.mode = 'idle';
+      }
+    }
+  } else {
+    s.x += (dx / dist) * step;
+    s.y += (dy / dist) * step;
+  }
+}
 
 /** Advance the world by `dt` seconds: the camera walk, the chef's walk, the
  *  cooking timers, patience, spawning, toasts and pops. */
@@ -294,6 +339,7 @@ export function stepWorld(world, dt) {
     world.toast.t += dt;
     if (world.toast.t > 1.8) world.toast = null;
   }
+  stepServer(world, dt);
   world.pops.forEach((p) => { p.t += dt; });
   world.pops = world.pops.filter((p) => p.t < 1.2);
   world.customers.forEach((c) => {

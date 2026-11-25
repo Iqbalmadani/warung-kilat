@@ -79,6 +79,32 @@ function checkerFloor(ctx, x, y, w, h, s, c1, c2) {
   ctx.restore();
 }
 
+/** Warm wood planks over a rect — the dining L's floor. */
+function woodFloor(ctx, x, y, w, h) {
+  ctx.fillStyle = '#C89A6B';
+  ctx.fillRect(x, y, w, h);
+  const rows = Math.ceil(h / 40);
+  for (let j = 0; j < rows; j += 1) {
+    const py = y + j * 40;
+    const ph = Math.min(40, y + h - py);
+    ctx.fillStyle = j % 2 ? 'rgba(255,230,190,.07)' : 'rgba(60,30,10,.06)';
+    ctx.fillRect(x, py, w, ph);
+    ctx.fillStyle = 'rgba(70,40,15,.28)';
+    ctx.fillRect(x, py, w, 2);
+    for (let px = x + ((j * 173) % 260); px < x + w; px += 260) ctx.fillRect(px, py, 2, ph);
+  }
+}
+
+/** A door on the bottom edge: frame, panel, and a sign above it. */
+function drawDoor(ctx, x, label) {
+  fillRect(ctx, x, 1056, 100, 52, '#4b2f1c');
+  fillRect(ctx, x, 1060, 100, 48, '#5a6066');
+  rr(ctx, x + 5, 1030, 90, 26, 5);
+  ctx.fillStyle = '#8A4A3A';
+  ctx.fill();
+  text(ctx, label, x + 50, 1043, 13, '#ffe9c8', 900, 'center');
+}
+
 function clamp01(v) {
   return Math.max(0, Math.min(1, v));
 }
@@ -107,7 +133,7 @@ export function drawItem(ctx, id, x, y, r) {
     ctx.beginPath(); ctx.moveTo(-r * 0.1, r * 0.35); ctx.lineTo(-r * 0.95, r * 0.9); ctx.stroke();
     circle(ctx, -r, r * 0.8, r * 0.22, '#f4ecdc');
     circle(ctx, -r * 0.8, r * 1.02, r * 0.2, '#f4ecdc');
-    ellipse(ctx, r * 0.2, -r * 0.05, r * 0.85, r * 0.62, raw ? '#f3a99b' : '#b4672a', 0, raw ? '#d98a7d' : '#85461a', 1.6);
+    ellipse(ctx, r * 0.2, -r * 0.05, r * 0.85, r * 0.62, raw ? '#E8A89B' : '#b4672a', 0, raw ? '#d98a7d' : '#85461a', 1.6);
     ellipse(ctx, r * 0.05, -r * 0.28, r * 0.48, r * 0.2, raw ? '#f9cbc1' : '#d9953f', -0.25);
     if (!raw) {
       [[0.35, 0.12], [-0.15, 0.05], [0.55, -0.15], [0.1, 0.3]].forEach((p) => {
@@ -118,14 +144,14 @@ export function drawItem(ctx, id, x, y, r) {
     ellipse(ctx, 0, 0, r * 0.68, r * 0.88, '#fff8ee', 0, '#e2d3b9', 1.6);
     ellipse(ctx, -r * 0.22, -r * 0.32, r * 0.14, r * 0.26, 'rgba(255,255,255,.9)', 0.4);
   } else if (id === 'telurD') {
-    ellipse(ctx, 0, r * 0.1, r, r * 0.72, '#d9a02a');
-    ellipse(ctx, 0, 0, r, r * 0.72, '#f5c83f', 0, '#d39a1c', 1.6);
+    ellipse(ctx, 0, r * 0.1, r, r * 0.72, '#C99A2E');
+    ellipse(ctx, 0, 0, r, r * 0.72, '#E9C44A', 0, '#C99A2E', 1.6);
     ellipse(ctx, -r * 0.15, -r * 0.2, r * 0.6, r * 0.26, '#ffe795', -0.2);
-    ctx.strokeStyle = '#d9a02a';
+    ctx.strokeStyle = '#C99A2E';
     ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(-r * 0.7, r * 0.1); ctx.quadraticCurveTo(0, -r * 0.35, r * 0.7, r * 0.1); ctx.stroke();
   } else if (id === 'sayur') {
-    ellipse(ctx, -r * 0.42, r * 0.05, r * 0.5, r * 0.82, '#3f9e48', 0.5, '#2c7a34', 1.4);
+    ellipse(ctx, -r * 0.42, r * 0.05, r * 0.5, r * 0.82, '#6FA96B', 0.5, '#2c7a34', 1.4);
     ellipse(ctx, r * 0.42, r * 0.05, r * 0.5, r * 0.82, '#4caf50', -0.5, '#2c7a34', 1.4);
     ellipse(ctx, 0, -r * 0.1, r * 0.5, r * 0.88, '#5cc05f', 0, '#2c7a34', 1.4);
     ctx.strokeStyle = '#2c7a34';
@@ -151,10 +177,10 @@ export function drawItem(ctx, id, x, y, r) {
     ctx.strokeStyle = '#e0403f';
     ctx.lineWidth = r * 0.4;
     ctx.beginPath(); ctx.moveTo(-r * 0.8, r * 0.55); ctx.quadraticCurveTo(-r * 0.1, -r * 0.9, r * 0.75, -r * 0.25); ctx.stroke();
-    circle(ctx, r * 0.8, -r * 0.28, r * 0.17, '#3f9e48');
+    circle(ctx, r * 0.8, -r * 0.28, r * 0.17, '#6FA96B');
   } else if (id === 'sambal') {
     ellipse(ctx, 0, r * 0.1, r * 0.9, r * 0.66, '#7e141c');
-    ellipse(ctx, 0, 0, r * 0.9, r * 0.66, '#b3202a', 0, '#8a1019', 1.4);
+    ellipse(ctx, 0, 0, r * 0.9, r * 0.66, '#A63A3A', 0, '#8a1019', 1.4);
     ellipse(ctx, -r * 0.2, -r * 0.2, r * 0.45, r * 0.2, '#d6454f', -0.2);
     [[-0.4, 0.05], [0.2, -0.25], [0.4, 0.2], [-0.1, 0.28], [0.05, -0.02]].forEach((p) => {
       circle(ctx, p[0] * r, p[1] * r, r * 0.08, '#f5c542');
@@ -194,7 +220,7 @@ function drawWok(ctx, x, y, wok, now) {
   circle(ctx, x, y, 52, '#3a3f45');
   circle(ctx, x, y, 46, '#23272b');
   rr(ctx, x - 7, y + 38, 14, 50, 6); ctx.fillStyle = '#2b2b2f'; ctx.fill();
-  rr(ctx, x - 8, y + 62, 16, 30, 6); ctx.fillStyle = '#8a5a2b'; ctx.fill();
+  rr(ctx, x - 8, y + 62, 16, 30, 6); ctx.fillStyle = '#9A6E42'; ctx.fill();
   circle(ctx, x, y, 41, '#3b3d44', '#17181b', 3);
   circle(ctx, x, y, 34, '#232428');
   circle(ctx, x - 12, y - 14, 10, 'rgba(255,255,255,.07)');
@@ -215,12 +241,12 @@ function drawWok(ctx, x, y, wok, now) {
       circle(ctx, x + Math.cos(a) * rad, y + Math.sin(a) * rad, 2.6, 'rgba(255,255,255,.6)');
     }
   }
-  ring(ctx, x, y, 48, wok.ready ? 1 : frac, wok.ready ? '#5fd04a' : '#ffb347', 6);
+  ring(ctx, x, y, 48, wok.ready ? 1 : frac, wok.ready ? '#7FB069' : '#D9A45B', 6);
   if (wok.ready) {
     rr(ctx, x - 30, y - 62, 60, 24, 8);
-    ctx.fillStyle = '#4fbf3a';
+    ctx.fillStyle = '#6FA96B';
     ctx.fill();
-    ctx.strokeStyle = '#2e7d22';
+    ctx.strokeStyle = '#5F8F5A';
     ctx.lineWidth = 2;
     ctx.stroke();
     text(ctx, 'SIAP!', x, y - 50, 15, '#fff', 900, 'center');
@@ -229,12 +255,12 @@ function drawWok(ctx, x, y, wok, now) {
 
 function drawKitchenStations(ctx, world, now) {
   // The teal tile strip along the top of the kitchen wall.
-  fillRect(ctx, 60, 36, 900, 26, '#6aa7b5');
+  fillRect(ctx, 60, 36, 900, 26, '#7FA8A0');
   ctx.fillStyle = 'rgba(255,255,255,.35)';
   for (let x = 60; x < 960; x += 40) ctx.fillRect(x, 36, 2, 26);
   // The long wooden counter the stations sit on.
-  fillRect(ctx, 60, 60, 900, 116, '#a87646');
-  fillRect(ctx, 60, 60, 900, 6, '#c4955f');
+  fillRect(ctx, 60, 60, 900, 116, '#B08A5E');
+  fillRect(ctx, 60, 60, 900, 6, '#C9A878');
   ctx.fillStyle = 'rgba(70,40,15,.18)';
   for (let x = 60; x < 960; x += 120) ctx.fillRect(x, 60, 2, 116);
   fillRect(ctx, 60, 170, 900, 8, '#6e4524');
@@ -249,7 +275,7 @@ function drawKitchenStations(ctx, world, now) {
   circle(ctx, 130, 118, 38, '#f6f7f9', '#b6bdc6', 3);
   circle(ctx, 130, 118, 28, null, '#e1e5ea', 2);
   circle(ctx, 130, 118, 6, '#9aa2ab');
-  circle(ctx, 168, 156, 5, '#e24a3b');
+  circle(ctx, 168, 156, 5, '#C96A5A');
   ctx.strokeStyle = 'rgba(255,255,255,.7)';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
@@ -277,9 +303,9 @@ function drawKitchenStations(ctx, world, now) {
   drawWok(ctx, 410, 121, world.woks[1], now);
   // The chopping board with its knife block.
   rr(ctx, 515, 76, 150, 84, 12);
-  ctx.fillStyle = '#e2b983';
+  ctx.fillStyle = '#D9BE8A';
   ctx.fill();
-  ctx.strokeStyle = '#b98a52';
+  ctx.strokeStyle = '#9A6E42';
   ctx.lineWidth = 3;
   ctx.stroke();
   ctx.strokeStyle = 'rgba(120,80,40,.25)';
@@ -288,9 +314,9 @@ function drawKitchenStations(ctx, world, now) {
     ctx.beginPath(); ctx.moveTo(526, y); ctx.lineTo(654, y); ctx.stroke();
   }
   rr(ctx, 665, 104, 34, 28, 10);
-  ctx.fillStyle = '#c59a63';
+  ctx.fillStyle = '#B08A5E';
   ctx.fill();
-  circle(ctx, 682, 118, 5, '#8a5a2b');
+  circle(ctx, 682, 118, 5, '#9A6E42');
   const board = world.board;
   if (board.item) {
     const frac = Math.max(0, Math.min(1, board.t / board.need));
@@ -314,7 +340,7 @@ function drawKitchenStations(ctx, world, now) {
       ctx.fillStyle = 'rgba(0,0,0,.18)';
       ctx.fill();
       rr(ctx, 527, 150, 126 * frac, 6, 3);
-      ctx.fillStyle = '#ffb347';
+      ctx.fillStyle = '#D9A45B';
       ctx.fill();
     }
   } else {
@@ -350,7 +376,7 @@ function drawKitchenStations(ctx, world, now) {
   // The ingredient crates along the bottom of the kitchen.
   [['ayam', 150, 'AYAM'], ['telur', 270, 'TELUR'], ['sayur', 390, 'SAYUR'], ['cabai', 510, 'CABAI']].forEach(([id, x, label]) => {
     rr(ctx, x - 46, 459, 92, 92, 9);
-    ctx.fillStyle = '#a56d38';
+    ctx.fillStyle = '#A97E4E';
     ctx.fill();
     ctx.strokeStyle = '#6e4524';
     ctx.lineWidth = 3;
@@ -361,7 +387,7 @@ function drawKitchenStations(ctx, world, now) {
       ctx.beginPath(); ctx.moveTo(x - 44, 459 + k * 23); ctx.lineTo(x + 44, 459 + k * 23); ctx.stroke();
     }
     rr(ctx, x - 38, 466, 76, 58, 8);
-    ctx.fillStyle = '#7a4d26';
+    ctx.fillStyle = '#8A6242';
     ctx.fill();
     [[-18, -12], [16, -9], [-10, 12], [17, 14], [0, 2]].forEach((p) => {
       drawItem(ctx, id, x + p[0], 489 + p[1], id === 'sayur' ? 17 : 15);
@@ -372,8 +398,8 @@ function drawKitchenStations(ctx, world, now) {
     text(ctx, label, x, 539, 13, '#5a3418', 900, 'center');
   });
   // The serving table with the assembly plate and the bell.
-  fillRect(ctx, 640, 458, 320, 100, '#a87646');
-  fillRect(ctx, 640, 458, 320, 6, '#c4955f');
+  fillRect(ctx, 640, 458, 320, 100, '#B08A5E');
+  fillRect(ctx, 640, 458, 320, 6, '#C9A878');
   fillRect(ctx, 640, 552, 320, 8, '#6e4524');
   const match = world.plate.length && world.customers.some(
     (c) => c && !c.leaving && dishKey(RECIPES[c.recipe].items) === dishKey(world.plate),
@@ -384,22 +410,22 @@ function drawKitchenStations(ctx, world, now) {
   drawPlateItems(ctx, world.plate, 790, 508, 40);
   if (match) {
     ctx.globalAlpha = 0.55 + 0.45 * Math.sin(now * 6);
-    circle(ctx, 790, 508, 60, null, '#4fd04a', 6);
+    circle(ctx, 790, 508, 60, null, '#7FB069', 6);
     ctx.globalAlpha = 1;
   }
   outlinedText(ctx, 'PIRING', 712, 486, 13, '#fff6e0', 'rgba(60,35,15,.7)', 800, 'center', 4);
   const bounce = match ? Math.sin(now * 8) * 3 : 0;
   circle(ctx, 905, 513, 28, 'rgba(0,0,0,.2)');
-  circle(ctx, 905, 508 + bounce, 28, '#e0a92a', '#9a6f12', 3);
+  circle(ctx, 905, 508 + bounce, 28, '#D9A45B', '#9a6f12', 3);
   circle(ctx, 905, 505 + bounce, 19, '#f6cd5a');
   circle(ctx, 900, 498 + bounce, 6, 'rgba(255,255,255,.6)');
   circle(ctx, 905, 478 + bounce, 5, '#9a6f12');
   outlinedText(ctx, 'SAJIKAN', 905, 545, 14, '#ffe9a8', 'rgba(60,35,15,.75)', 900, 'center', 4);
   // The bar between the kitchen and the dining room.
   rr(ctx, 60, 556, 900, 68, 6);
-  ctx.fillStyle = '#8f5e32';
+  ctx.fillStyle = '#9A6E42';
   ctx.fill();
-  ctx.fillStyle = '#b07a45';
+  ctx.fillStyle = '#B98F5C';
   ctx.fillRect(60, 556, 900, 8);
   ctx.fillStyle = '#5b3a1d';
   ctx.fillRect(60, 616, 900, 8);
@@ -450,7 +476,7 @@ function drawBubble(ctx, c, x, y) {
   ctx.fillStyle = '#fff6df';
   ctx.fill();
   ctx.lineWidth = 3;
-  ctx.strokeStyle = c.patience < 0.3 ? '#d9433c' : '#caa56a';
+  ctx.strokeStyle = c.patience < 0.3 ? '#C96A5A' : '#caa56a';
   ctx.stroke();
   ctx.beginPath();
   ctx.moveTo(x - 11, y - 42); ctx.lineTo(x + 11, y - 42); ctx.lineTo(x, y - 58);
@@ -469,7 +495,7 @@ function drawBubble(ctx, c, x, y) {
   ctx.fillStyle = '#e8dcc0';
   ctx.fill();
   rr(ctx, x - 84, y + 22, 168 * c.patience, 9, 4);
-  ctx.fillStyle = c.patience > 0.5 ? '#5fb84a' : c.patience > 0.25 ? '#f0a040' : '#e04a3a';
+  ctx.fillStyle = c.patience > 0.5 ? '#7FB069' : c.patience > 0.25 ? '#D9A45B' : '#C96A5A';
   ctx.fill();
   ctx.restore();
 }
@@ -480,16 +506,16 @@ function drawTable(ctx, x, y, r, seats, seated) {
   angles.forEach((a, i) => {
     const cx = x + Math.cos(a) * (r + 20);
     const cy = y + Math.sin(a) * (r + 20);
-    circle(ctx, cx, cy, 21, '#6f4425', '#4b2d16', 2);
+    circle(ctx, cx, cy, 21, '#8A6242', '#6B4A2E', 2);
     if (seated[i]) {
       drawPerson(ctx, cx, cy, Math.atan2(y - cy, x - cx) + Math.PI / 2, seated[i], 0.78);
     }
   });
   circle(ctx, x, y + 5, r + 3, 'rgba(0,0,0,.18)');
-  circle(ctx, x, y, r, '#d19a63', '#8a5a2b', 4);
+  circle(ctx, x, y, r, '#C89A6B', '#9A6E42', 4);
   circle(ctx, x, y, r - 12, null, 'rgba(255,235,200,.45)', 2);
   circle(ctx, x - 14, y - 8, 13, '#fffdf8', '#d9d2c3', 2);
-  circle(ctx, x + 18, y + 12, 8, '#7a4d26');
+  circle(ctx, x + 18, y + 12, 8, '#8A6242');
   circle(ctx, x + 18, y + 12, 5, '#3b2414');
 }
 
@@ -504,10 +530,10 @@ function drawChef(ctx, world) {
   const s = Math.sin(c.walk) * 7;
   ellipse(ctx, -10, 16 + s, 8, 5.5, '#3a2a22');
   ellipse(ctx, 10, 16 - s, 8, 5.5, '#3a2a22');
-  ellipse(ctx, 0, 5, 31, 19, '#d8433f', 0, '#a82f2c', 2);
+  ellipse(ctx, 0, 5, 31, 19, '#C65D4E', 0, '#9A5247', 2);
   ellipse(ctx, 0, 13, 15, 6, '#fff3e0');
-  ellipse(ctx, -27, -8, 8, 13, '#d8433f', 0.25, '#a82f2c', 1.5);
-  ellipse(ctx, 27, -8, 8, 13, '#d8433f', -0.25, '#a82f2c', 1.5);
+  ellipse(ctx, -27, -8, 8, 13, '#C65D4E', 0.25, '#9A5247', 1.5);
+  ellipse(ctx, 27, -8, 8, 13, '#C65D4E', -0.25, '#9A5247', 1.5);
   circle(ctx, -20, -24, 7, '#f0c9a0', 'rgba(0,0,0,.2)', 1);
   circle(ctx, 20, -24, 7, '#f0c9a0', 'rgba(0,0,0,.2)', 1);
   circle(ctx, 0, -3, 16, '#f0c9a0');
@@ -523,6 +549,32 @@ function drawChef(ctx, world) {
   }
 }
 
+/** The server (pelayan): muted teal shirt, white apron, cap — he carries the
+ *  plate to the customer who was just served, then walks back to his post. */
+function drawServer(ctx, world) {
+  const s = world.server;
+  ctx.save();
+  ctx.translate(s.x, s.y);
+  ellipse(ctx, 0, 8, 34, 22, 'rgba(0,0,0,.2)');
+  ellipse(ctx, 0, 5, 29, 17, '#5A9A8A', 0, '#3F6E64', 2);
+  ellipse(ctx, 0, 13, 14, 6, '#fff6e0');
+  ellipse(ctx, -25, -8, 7, 12, '#5A9A8A', 0.25, '#3F6E64', 1.5);
+  ellipse(ctx, 25, -8, 7, 12, '#5A9A8A', -0.25, '#3F6E64', 1.5);
+  circle(ctx, 0, -3, 15, '#f0c9a0');
+  ctx.save();
+  ctx.beginPath(); ctx.rect(-22, -26, 44, 18); ctx.clip();
+  ellipse(ctx, 0, -8, 18, 14, '#3F6E64');
+  ctx.restore();
+  rr(ctx, -20, -12, 40, 7, 3);
+  ctx.fillStyle = '#3F6E64';
+  ctx.fill();
+  ctx.restore();
+  if (s.carry) {
+    circle(ctx, s.x, s.y - 30, 20, '#fffdf8', '#d9d2c3', 2);
+    drawItem(ctx, s.carry, s.x, s.y - 30, 12);
+  }
+}
+
 function drawWorld(ctx, world, now, cam) {
   // The world sits on a dark surround, inside a wooden frame.
   fillRect(ctx, -700, -700, 3400, 2600, '#1d2023');
@@ -530,44 +582,32 @@ function drawWorld(ctx, world, now, cam) {
   rr(ctx, 14, 22, 1972, 1086, 26);
   ctx.fillStyle = '#4b2f1c';
   ctx.fill();
-  // The three floors: kitchen checkerboard, dining checkerboard, wood planks.
-  checkerFloor(ctx, 60, 60, 900, 500, 50, '#f3e9d0', '#e0d2b0');
-  checkerFloor(ctx, 1000, 60, 940, 500, 47, '#cf7f55', '#bd6e45');
-  ctx.fillStyle = '#b98250';
-  ctx.fillRect(60, 620, 1880, 440);
-  for (let j = 0; j < 11; j += 1) {
-    const y = 620 + j * 40;
-    ctx.fillStyle = j % 2 ? 'rgba(255,230,190,.07)' : 'rgba(60,30,10,.06)';
-    ctx.fillRect(60, y, 1880, 40);
-    ctx.fillStyle = 'rgba(70,40,15,.28)';
-    ctx.fillRect(60, y, 1880, 2);
-    for (let x = 60 + ((j * 173) % 260); x < 1940; x += 260) ctx.fillRect(x, y, 2, 40);
-  }
-  // The walls between the rooms and the entrance door.
-  fillRect(ctx, 960, 60, 40, 500, '#5b3a24');
-  fillRect(ctx, 960, 560, 980, 60, '#5b3a24');
-  fillRect(ctx, 1250, 560, 100, 60, '#b98250');
+  // The floors: the kitchen square is a soft sage checkerboard; the dining
+  // room is ONE L of warm wood planks wrapping around it. No interior walls
+  // — the rooms are open to each other, the floors alone mark them.
+  checkerFloor(ctx, 60, 60, 900, 500, 50, '#DCE8D0', '#C9D9B8');
+  woodFloor(ctx, 1000, 60, 940, 500);
+  woodFloor(ctx, 60, 620, 1880, 440);
+  // The top trim, and the two doors on the bottom edge: MASUK near the
+  // kitchen (left), KELUAR at the far end (right). The strip along the
+  // bottom stays clear of tables so both doors are free.
   fillRect(ctx, 60, 30, 1880, 30, '#3f2716');
-  fillRect(ctx, 1250, 1056, 100, 52, '#4b2f1c');
-  fillRect(ctx, 1250, 1060, 100, 48, '#5a6066');
-  rr(ctx, 1255, 1030, 90, 26, 5);
-  ctx.fillStyle = '#7a2d2d';
-  ctx.fill();
-  text(ctx, 'MASUK', 1300, 1043, 13, '#ffe9c8', 900, 'center');
+  drawDoor(ctx, 180, 'MASUK');
+  drawDoor(ctx, 1720, 'KELUAR');
   // The dining tables, some with customers already seated.
   const S = CUSTOMER_STYLES;
   drawTable(ctx, 1150, 200, 62, 4, [S[1], null, S[4], null]);
   drawTable(ctx, 1440, 360, 62, 4, [null, S[0], null, S[3]]);
   drawTable(ctx, 1720, 190, 62, 3, [S[5], null, null]);
   drawTable(ctx, 1770, 440, 56, 2, [null, S[2]]);
-  [[230, 900], [540, 940], [860, 890], [1180, 950], [1500, 900], [1800, 940]].forEach((p, i) => {
+  [[340, 880], [640, 940], [940, 890], [1240, 950], [1540, 900], [1800, 880]].forEach((p, i) => {
     drawTable(ctx, p[0], p[1], 64, 4, [i % 2 ? S[(i + 1) % 6] : null, null, i % 3 === 0 ? S[(i + 3) % 6] : null, null]);
   });
   // Potted plants in the corners.
   [[1930, 70], [1010, 550], [80, 1040], [1920, 1040]].forEach((p) => {
-    circle(ctx, p[0], p[1], 26, '#2f7d3b', '#1d5226', 3);
-    circle(ctx, p[0] - 8, p[1] - 8, 13, '#46a653');
-    circle(ctx, p[0] + 9, p[1] + 6, 11, '#3b9448');
+    circle(ctx, p[0], p[1], 26, '#5F8F5A', '#1d5226', 3);
+    circle(ctx, p[0] - 8, p[1] - 8, 13, '#7FAE7F');
+    circle(ctx, p[0] + 9, p[1] + 6, 11, '#6FA96B');
   });
   drawKitchenStations(ctx, world, now);
   // The bar customers, sliding in and out, with their order bubbles.
@@ -580,12 +620,13 @@ function drawWorld(ctx, world, now, cam) {
     ctx.globalAlpha = alpha;
     drawPerson(ctx, x, y, 0, c.style, 1.3);
     if (c.leaving === 'happy') {
-      outlinedText(ctx, '♥', x + 34, y - 28, 28, '#ff6b8a', '#fff', 900, 'center', 4);
+      outlinedText(ctx, '♥', x + 34, y - 28, 28, '#D97B8A', '#fff', 900, 'center', 4);
     }
     ctx.restore();
     if (!c.leaving) drawBubble(ctx, c, x, y + 88);
   });
   drawChef(ctx, world);
+  drawServer(ctx, world);
   // Coins popping off a served order.
   world.pops.forEach((p) => {
     ctx.globalAlpha = 1 - p.t / 1.2;
@@ -748,7 +789,7 @@ function drawFrontCustomer(ctx, c, x, now) {
     ctx.fillStyle = '#fff6df';
     ctx.fill();
     ctx.lineWidth = 4;
-    ctx.strokeStyle = c.patience < 0.3 ? '#d9433c' : '#caa56a';
+    ctx.strokeStyle = c.patience < 0.3 ? '#C96A5A' : '#caa56a';
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(x - 13, 289); ctx.lineTo(x + 13, 289); ctx.lineTo(x, 310);
@@ -759,7 +800,7 @@ function drawFrontCustomer(ctx, c, x, now) {
     ctx.fillStyle = '#fff6df';
     ctx.fillRect(x - 11, 286, 22, 5);
     text(ctx, recipe.name, x - 104, 210, 17, '#2b1c12', 900);
-    text(ctx, `$${recipe.price}`, x + 104, 210, 17, '#b9651a', 900, 'right');
+    text(ctx, `$${recipe.price}`, x + 104, 210, 17, '#9C7A33', 900, 'right');
     const n = recipe.items.length;
     recipe.items.forEach((id, i) => {
       drawItem(ctx, id, x + (i - (n - 1) / 2) * 52, 246, 22);
@@ -768,7 +809,7 @@ function drawFrontCustomer(ctx, c, x, now) {
     ctx.fillStyle = '#e8dcc0';
     ctx.fill();
     rr(ctx, x - 104, 272, 208 * c.patience, 9, 4);
-    ctx.fillStyle = c.patience > 0.5 ? '#5fb84a' : c.patience > 0.25 ? '#f0a040' : '#e04a3a';
+    ctx.fillStyle = c.patience > 0.5 ? '#7FB069' : c.patience > 0.25 ? '#D9A45B' : '#C96A5A';
     ctx.fill();
   }
   ctx.globalAlpha = alpha;
@@ -778,13 +819,13 @@ function drawFront(ctx, world, now) {
   const W = FIELD.width;
   // The wall, the tile band and the top beam.
   let g = ctx.createLinearGradient(0, 0, 0, 546);
-  g.addColorStop(0, '#d99a55');
-  g.addColorStop(1, '#b87638');
+  g.addColorStop(0, '#DEB27C');
+  g.addColorStop(1, '#C99A67');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, 546);
   ctx.fillStyle = 'rgba(90,50,20,.16)';
   for (let x = 0; x < W; x += 80) ctx.fillRect(x, 0, 3, 546);
-  checkerFloor(ctx, 0, 466, W, 80, 40, '#a8432f', '#f1e2c4');
+  checkerFloor(ctx, 0, 466, W, 80, 40, '#B0603F', '#f1e2c4');
   ctx.fillStyle = 'rgba(0,0,0,.12)';
   ctx.fillRect(0, 466, W, 6);
   ctx.fillStyle = '#5b3a24';
@@ -810,7 +851,7 @@ function drawFront(ctx, world, now) {
   ctx.lineTo(150, 196); ctx.lineTo(208, 224); ctx.lineTo(208, 252);
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = '#d9433c';
+  ctx.fillStyle = '#C96A5A';
   ctx.fillRect(36, 78, 22, 184);
   ctx.fillRect(196, 78, 22, 184);
   ctx.fillStyle = 'rgba(255,255,255,.35)';
@@ -837,7 +878,7 @@ function drawFront(ctx, world, now) {
   rr(ctx, 1050, 52, 200, 130, 10);
   ctx.fillStyle = '#2f3d36';
   ctx.fill();
-  ctx.strokeStyle = '#8a5a2b';
+  ctx.strokeStyle = '#9A6E42';
   ctx.lineWidth = 6;
   ctx.stroke();
   text(ctx, 'MENU', 1150, 70, 15, '#f3e6c4', 900, 'center');
@@ -858,7 +899,7 @@ function drawFront(ctx, world, now) {
     ctx.beginPath();
     ctx.moveTo(x - 30, 150); ctx.lineTo(x - 12, 126); ctx.lineTo(x + 12, 126); ctx.lineTo(x + 30, 150);
     ctx.closePath();
-    ctx.fillStyle = '#e8b04a';
+    ctx.fillStyle = '#D9A45B';
     ctx.fill();
     circle(ctx, x, 152, 8, '#fff3c4');
   });
@@ -868,8 +909,8 @@ function drawFront(ctx, world, now) {
   });
   // The counter, seen from the cook's side, with the plate and the bell.
   g = ctx.createLinearGradient(0, 546, 0, 720);
-  g.addColorStop(0, '#c58a50');
-  g.addColorStop(1, '#a06a36');
+  g.addColorStop(0, '#C89A6B');
+  g.addColorStop(1, '#A87F52');
   ctx.fillStyle = g;
   ctx.fillRect(0, 546, W, 174);
   ctx.fillStyle = '#6e4524';
@@ -890,7 +931,7 @@ function drawFront(ctx, world, now) {
   drawPlateItems(ctx, world.plate, 640, 616, 62, 1.8, 0.62);
   if (match) {
     ctx.globalAlpha = 0.55 + 0.45 * Math.sin(now * 6);
-    ellipse(ctx, 640, 622, 166, 54, null, 0, '#4fd04a', 6);
+    ellipse(ctx, 640, 622, 166, 54, null, 0, '#7FB069', 6);
     ctx.globalAlpha = 1;
   }
   outlinedText(ctx, 'PIRING SAJI', 640, 672, 15, '#fff6e0', 'rgba(60,35,15,.7)', 800, 'center', 4);
@@ -900,7 +941,7 @@ function drawFront(ctx, world, now) {
   ctx.beginPath();
   ctx.arc(1100, 636 + bounce, 38, Math.PI, 0);
   ctx.closePath();
-  ctx.fillStyle = '#f0c24a';
+  ctx.fillStyle = '#E9C44A';
   ctx.fill();
   ctx.strokeStyle = '#9a6f12';
   ctx.lineWidth = 3;
@@ -943,7 +984,7 @@ function drawHUD(ctx, world, now) {
   text(ctx, '$', 420, 23, 14, '#8a5a05', 900, 'center');
   text(ctx, String(world.coins), 440, 23, 22, '#fff', 900);
   for (let i = 0; i < 3; i += 1) {
-    text(ctx, '♥', 560 + i * 26, 23, 26, i < world.hearts ? '#ff6b8a' : 'rgba(255,255,255,.2)', 900, 'center');
+    text(ctx, '♥', 560 + i * 26, 23, 26, i < world.hearts ? '#D97B8A' : 'rgba(255,255,255,.2)', 900, 'center');
   }
   text(ctx, `Saji: ${world.served}`, 680, 23, 18, '#f3e6c4', 800);
   // The three view tabs, top right; the active view is gold.
@@ -978,10 +1019,10 @@ function drawHUD(ctx, world, now) {
       ctx.fillStyle = '#fff6df';
       ctx.fill();
       ctx.lineWidth = 3;
-      ctx.strokeStyle = c.patience < 0.3 ? '#d9433c' : '#caa56a';
+      ctx.strokeStyle = c.patience < 0.3 ? '#C96A5A' : '#caa56a';
       ctx.stroke();
       text(ctx, recipe.name, x + 10, 66, 15, '#2b1c12', 900);
-      text(ctx, `$${recipe.price}`, x + w - 10, 66, 15, '#b9651a', 900, 'right');
+      text(ctx, `$${recipe.price}`, x + w - 10, 66, 15, '#9C7A33', 900, 'right');
       recipe.items.forEach((id, i) => {
         drawItem(ctx, id, x + 24 + i * 32, 85, 10);
       });
@@ -989,7 +1030,7 @@ function drawHUD(ctx, world, now) {
       ctx.fillStyle = '#e8dcc0';
       ctx.fill();
       rr(ctx, x + 10, 98, (w - 20) * c.patience, 6, 3);
-      ctx.fillStyle = c.patience > 0.5 ? '#5fb84a' : c.patience > 0.25 ? '#f0a040' : '#e04a3a';
+      ctx.fillStyle = c.patience > 0.5 ? '#7FB069' : c.patience > 0.25 ? '#D9A45B' : '#C96A5A';
       ctx.fill();
       x += w + 10;
     });
@@ -1025,7 +1066,7 @@ function drawHUD(ctx, world, now) {
     ctx.save();
     ctx.globalAlpha = alpha;
     rr(ctx, W / 2 - w / 2, y, w, 36, 18);
-    ctx.fillStyle = t.kind === 'good' ? '#3f9e48' : t.kind === 'bad' ? '#c2403a' : '#4a3a2a';
+    ctx.fillStyle = t.kind === 'good' ? '#6FA96B' : t.kind === 'bad' ? '#B65A4A' : '#4a3a2a';
     ctx.fill();
     text(ctx, t.text, W / 2, y + 19, 20, '#fff', 900, 'center');
     ctx.restore();
