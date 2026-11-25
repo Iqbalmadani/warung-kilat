@@ -1,116 +1,108 @@
-// Mouse and keyboard: every click lands on a station, a bin, the plate or the serve
-// window, and becomes one call into the world's rules.
-import { LAYOUT } from './config.js';
-import {
-  takeRice, takeRaw, placeInStation, collectFromStation, addToPlate, removeFromPlate, servePlate, serveTicket,
-} from './world.js';
+// Mouse and keyboard: every click lands on a nav tab, a map zone, a station
+// (the chef walks there first), a customer or the bell, and becomes one call
+// into the world's rules.
+import { FIELD, CAMERAS, NAV_TABS, STATIONS, MAP_ZONES, FRONT_SLOTS_X, VIEW_ORDER } from './config.js';
+import { setView, act, serve, startGame, stationById, cameraNow } from './world.js';
 
-function inside(x, y, rect) {
+function insideRect(x, y, rect) {
   return x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
 }
 
-const RAW_BINS = ['ayam', 'telur', 'sayur', 'cabai'];
-
-/** Where the camera dives when it walks between two views. */
-const WALK_CENTERS = {
-  'hub>cook': { cx: 640, cy: 222 },
-  'hub>front': { cx: 640, cy: 538 },
-  'cook>hub': { cx: 640, cy: 360 },
-  'front>hub': { cx: 640, cy: 360 },
-};
-
-/** Start a camera walk from the current view to `to` (0.6 s). */
-function startTransition(world, to) {
-  if (world.transition || world.view === to) return false;
-  const center = WALK_CENTERS[`${world.view}>${to}`] || { cx: 640, cy: 360 };
-  world.transition = { from: world.view, to, t: 0, dur: 0.6, cx: center.cx, cy: center.cy };
-  return true;
+function insideCircle(x, y, shape) {
+  return Math.hypot(x - shape[1], y - shape[2]) <= shape[3];
 }
 
-/** Handle a click at logical-field coordinates. Returns true when it did something. */
-export function handleClick(world, x, y) {
-  if (world.transition) return false;
-  const { rice, fry, chop, plate, serve, bins, bin, viewToggle, viewTabs, front, hub } = LAYOUT;
-  // HUD view tabs: tap PETA / DAPUR / KONTER to walk straight there.
-  if (inside(x, y, viewTabs.hub)) return startTransition(world, 'hub');
-  if (inside(x, y, viewTabs.cook)) return startTransition(world, 'cook');
-  if (inside(x, y, viewTabs.front)) return startTransition(world, 'front');
-  if (inside(x, y, viewToggle)) {
-    return startTransition(world, world.view === 'hub' ? 'cook' : 'hub');
+function insideShape(shape, x, y) {
+  if (shape[0] === 'c') return insideCircle(x, y, shape);
+  return x >= shape[1] && x <= shape[1] + shape[3] && y >= shape[2] && y <= shape[2] + shape[4];
+}
+
+/** Screen point to world point, through the current camera. */
+export function screenToWorld(world, sx, sy) {
+  const cam = cameraNow(world);
+  return [(sx - FIELD.width / 2) / cam.z + cam.x, (sy - FIELD.height / 2) / cam.z + cam.y];
+}
+
+/** What is under a screen point: nav tab, start, zone, station, customer, bell. */
+export function getHit(world, sx, sy) {
+  for (const tab of NAV_TABS) {
+    if (sx >= tab.x && sx <= tab.x + tab.w && sy >= tab.y && sy <= tab.y + tab.h) {
+      return { kind: 'nav', view: tab.view };
+    }
   }
-  if (world.view === 'hub') {
-    if (inside(x, y, hub.kitchen)) return startTransition(world, 'cook');
-    if (inside(x, y, hub.dining)) return startTransition(world, 'front');
-    return false;
-  }
-  if (world.view === 'front') {
-    if (inside(x, y, front.serve)) return servePlate(world) > 0;
-    for (let i = 0; i < 4; i += 1) {
-      const rect = {
-        x: front.custRow.x + i * (front.customer.w + front.customer.gap),
-        y: front.custRow.y,
-        w: front.customer.w,
-        h: front.customer.h,
-      };
-      if (inside(x, y, rect)) {
-        const ticket = world.tickets[i];
-        if (ticket) return serveTicket(world, ticket.id) > 0;
-        return false;
+  if (world.transition < 1) return null;
+  if (world.state !== 'play') return { kind: 'start' };
+  if (world.view === 'counter') {
+    if (sx >= 1040 && sx <= 1160 && sy >= 572 && sy <= 690) return { kind: 'bell' };
+    for (const c of world.customers) {
+      if (!c || c.leaving) continue;
+      const x = FRONT_SLOTS_X[c.slot];
+      if (sx >= x - 118 && sx <= x + 118 && sy >= 186 && sy <= 546) {
+        return { kind: 'customer', customer: c };
       }
     }
-    return false;
+    return null;
   }
-  if (inside(x, y, rice)) return takeRice(world);
-  if (inside(x, y, fry)) {
-    const slot = x < fry.x + fry.w / 2 ? 0 : 1;
-    const job = world.fry[slot];
-    if (job && job.remaining <= 0) return collectFromStation(world, 'fry', slot);
-    return placeInStation(world, 'fry');
+  const [wx, wy] = screenToWorld(world, sx, sy);
+  if (world.view === 'kitchen') {
+    for (const station of STATIONS) {
+      if (insideShape(station.shape, wx, wy)) return { kind: 'station', id: station.id };
+    }
+    return null;
   }
-  if (inside(x, y, chop)) {
-    if (world.chop && world.chop.remaining <= 0) return collectFromStation(world, 'chop', 0);
-    return placeInStation(world, 'chop');
+  if (world.view === 'hub') {
+    if (insideRect(wx, wy, MAP_ZONES.kitchen)) return { kind: 'zone', view: 'kitchen' };
+    if (insideRect(wx, wy, MAP_ZONES.counter)) return { kind: 'zone', view: 'counter' };
   }
-  if (inside(x, y, plate)) {
-    const hasCooked = world.hands.some((item) => item === 'nasi' || item === 'ayam-goreng' || item === 'telur-dadar' || item === 'sayur-tumis' || item === 'sambal');
-    if (hasCooked) return addToPlate(world);
-    if (world.plate.length > 0) return removeFromPlate(world, world.plate.length - 1);
-    return false;
+  return null;
+}
+
+/** Handle a click at screen coordinates. Returns true when it did something. */
+export function handleClick(world, sx, sy) {
+  const hit = getHit(world, sx, sy);
+  if (!hit) return false;
+  if (hit.kind === 'nav') return setView(world, hit.view);
+  if (hit.kind === 'start') {
+    if (world.state === 'title' || world.state === 'over') startGame(world);
+    return true;
   }
-  if (inside(x, y, serve)) return servePlate(world) > 0;
-  for (let i = 0; i < RAW_BINS.length; i += 1) {
-    const rect = { x: bins.x + i * (bin.w + bin.gap), y: bins.y, w: bin.w, h: bin.h };
-    if (inside(x, y, rect)) return takeRaw(world, RAW_BINS[i]);
+  if (hit.kind === 'zone') return setView(world, hit.view);
+  if (hit.kind === 'customer') return serve(world, hit.customer) > 0;
+  if (hit.kind === 'bell') return serve(world, null) > 0;
+  if (hit.kind === 'station') {
+    // Send the chef walking to the station; the job runs when he arrives.
+    const station = stationById(hit.id);
+    const chef = world.chef;
+    chef.tx = station.stand[0];
+    chef.ty = station.stand[1];
+    chef.fx = station.face[0];
+    chef.fy = station.face[1];
+    chef.act = () => act(world, hit.id);
+    if (Math.hypot(chef.tx - chef.x, chef.ty - chef.y) < 2) {
+      chef.tx = null;
+      chef.act = null;
+      act(world, hit.id);
+    }
+    return true;
   }
   return false;
 }
 
-/** Handle a key press. Returns 'start' | 'serve' | 'pause' | 'restart' | null. */
+/** Handle a key press. Returns 'start' | 'served' | 'restart' | null. */
 export function handleKey(world, key, screen) {
-  if (world.transition) return null;
-  if (key === ' ' || key === 'Enter') {
+  const k = key.toLowerCase();
+  if (k === ' ' || k === 'enter') {
     if (screen !== 'play') return 'start';
-    return servePlate(world) > 0 ? 'served' : null;
+    return serve(world, null) > 0 ? 'served' : null;
   }
-  if (screen !== 'play') {
-    if (key === 'r' || key === 'R') return 'restart';
-    return null;
+  if (k === 'v') {
+    const next = VIEW_ORDER[(VIEW_ORDER.indexOf(world.view) + 1) % VIEW_ORDER.length];
+    return setView(world, next) ? 'took' : null;
   }
-  if (key === '1') return takeRice(world) ? 'took' : null;
-  if (key === '2') return takeRaw(world, 'ayam') ? 'took' : null;
-  if (key === '3') return takeRaw(world, 'telur') ? 'took' : null;
-  if (key === '4') return takeRaw(world, 'sayur') ? 'took' : null;
-  if (key === '5') return takeRaw(world, 'cabai') ? 'took' : null;
-  if (key === 'v' || key === 'V') {
-    // Walk the camera: map -> kitchen -> counter -> map.
-    const next = world.view === 'hub' ? 'cook' : world.view === 'cook' ? 'front' : 'hub';
-    return startTransition(world, next) ? 'took' : null;
-  }
-  if (key === 'f' || key === 'F') {
-    for (let s = 0; s < 2; s += 1) if (collectFromStation(world, 'fry', s)) return 'took';
-    return collectFromStation(world, 'chop', 0) ? 'took' : null;
-  }
-  if (key === 'p' || key === 'P' || key === 'Escape') return 'pause';
-  if (key === 'r' || key === 'R') return 'restart';
+  if (k === '1') return setView(world, 'hub') ? 'took' : null;
+  if (k === '2') return setView(world, 'kitchen') ? 'took' : null;
+  if (k === '3') return setView(world, 'counter') ? 'took' : null;
+  if (k === 'escape') return setView(world, 'hub') ? 'took' : null;
+  if (k === 'r' && screen === 'over') return 'restart';
   return null;
 }

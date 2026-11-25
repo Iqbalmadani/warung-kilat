@@ -1,8 +1,8 @@
 // Warung Kilat: the game loop, the screens, and the screenshot scenes behind ?shot=.
 import { FIELD, STEP, BEST_KEY } from './config.js';
-import { createWorld, resetWorld, stepWorld, EVENT_OVER } from './world.js';
-import { draw, SCREEN_TITLE, SCREEN_PLAY, SCREEN_OVER } from './render.js';
-import { handleClick, handleKey } from './input.js';
+import { createWorld, resetWorld, stepWorld, startGame, EVENT_OVER } from './world.js';
+import { draw, setHover, SCREEN_TITLE, SCREEN_PLAY, SCREEN_OVER } from './render.js';
+import { handleClick, handleKey, getHit } from './input.js';
 import { stageShot } from './shots.js';
 
 const canvas = document.getElementById('game');
@@ -15,7 +15,6 @@ const seed = Number(params.get('seed') || '1') || 1;
 
 const world = createWorld(seed);
 let screen = SCREEN_TITLE;
-let paused = false;
 let best = 0;
 try {
   best = Number(window.localStorage.getItem(BEST_KEY) || '0') || 0;
@@ -51,24 +50,23 @@ function toField(event) {
 
 function announce() {
   if (!statusLine) return;
-  statusLine.textContent = `Warung Kilat, hari ${world.day}, ${world.coins} koin, ${world.served} pesanan disajikan, ${world.hearts} hati.`;
+  statusLine.textContent = `Warung Kilat, hari ${world.level}, ${world.coins} koin, ${world.served} pesanan disajikan, ${world.hearts} hati.`;
 }
 
-function startGame() {
-  resetWorld(world, seed);
-  screen = SCREEN_PLAY;
-  paused = false;
-  announce();
-}
+let pointer = { x: -1, y: -1 };
+
+canvas.addEventListener('mousemove', (event) => {
+  pointer = toField(event);
+});
 
 canvas.addEventListener('click', (event) => {
   if (screen === SCREEN_TITLE) {
-    startGame();
+    startGame(world);
+    screen = SCREEN_PLAY;
+    announce();
     return;
   }
   if (screen === SCREEN_OVER) return;
-  if (paused) return;
-  if (world.transition) return;
   const at = toField(event);
   handleClick(world, at.x, at.y);
   announce();
@@ -78,12 +76,13 @@ window.addEventListener('keydown', (event) => {
   if (event.key === ' ' || event.key === 'Enter') event.preventDefault();
   const result = handleKey(world, event.key, screen);
   if (result === 'start') {
-    if (screen === SCREEN_TITLE) startGame();
-    else if (screen === SCREEN_OVER) startGame();
-  } else if (result === 'pause') {
-    paused = !paused;
+    if (screen === SCREEN_TITLE || screen === SCREEN_OVER) {
+      startGame(world);
+      screen = SCREEN_PLAY;
+    }
   } else if (result === 'restart') {
-    startGame();
+    startGame(world);
+    screen = SCREEN_PLAY;
   }
   announce();
 });
@@ -95,6 +94,7 @@ if (shotName) {
   // A screenshot scene: stage the world, draw one frame, and say so.
   screen = stageShot(shotName, world);
   ctx.setTransform(canvas.width / FIELD.width, 0, 0, canvas.height / FIELD.height, 0, 0);
+  setHover(null);
   draw(ctx, world, screen, 2.0, best);
   document.body.dataset.ready = '1';
   document.title = `shot:${shotName}`;
@@ -104,7 +104,7 @@ if (shotName) {
   function frame(now) {
     const elapsed = Math.min(0.25, (now - last) / 1000);
     last = now;
-    if (!paused && screen === SCREEN_PLAY) {
+    if (screen === SCREEN_PLAY) {
       accumulator += elapsed;
       while (accumulator >= STEP) {
         const events = stepWorld(world, STEP);
@@ -117,14 +117,8 @@ if (shotName) {
         }
       }
     }
-    // Advance a camera walk; when it lands, the new view becomes current.
-    if (world.transition) {
-      world.transition.t += elapsed;
-      if (world.transition.t >= world.transition.dur) {
-        world.view = world.transition.to;
-        world.transition = null;
-      }
-    }
+    // The hover highlight follows the mouse (nav tabs stay live mid-walk).
+    setHover(pointer.x < 0 ? null : getHit(world, pointer.x, pointer.y));
     ctx.setTransform(canvas.width / FIELD.width, 0, 0, canvas.height / FIELD.height, 0, 0);
     draw(ctx, world, screen, now / 1000, best);
     requestAnimationFrame(frame);
