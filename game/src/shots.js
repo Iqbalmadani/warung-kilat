@@ -38,11 +38,10 @@ function freezeSpawns(world) {
 
 /**
  * Set `world` to the named scene and return the screen to draw over it.
- * cover: a busy mid-play frame — orders on the board, a dish being assembled, the
- *   wok and the chopping board at work, the timer running.
+ * cover: the hub — the whole warung from directly above, orders on the board
+ *   of tables, a dish being assembled, the wok and the chopping board at work.
  * rush: the service rush — four tickets, two nearly out of patience, both wok slots
  *   busy, a plate mid-assembly.
- * serve: a plate finished and matching the oldest ticket, the serve button lit.
  * front: the front view — customers waiting behind the counter, a finished plate
  *   matching the oldest ticket, the serve button lit.
  * title: the title screen over a kitchen already at work.
@@ -70,24 +69,7 @@ export function stageShot(name, world) {
       { at: 5.0, fn: (w) => takeRaw(w, 'ayam') },
       { at: 5.3, fn: (w) => placeInStation(w, 'fry') },
     ]);
-    return SCREEN_PLAY;
-  }
-  if (name === 'serve') {
-    stageTicket(world, 'nasi-sambal', 0.55);
-    stageTicket(world, 'nasi-ayam', 0.75);
-    freezeSpawns(world);
-    runScript(world, 7, [
-      { at: 0.0, fn: (w) => takeRice(w) },
-      { at: 0.2, fn: (w) => addToPlate(w) },
-      { at: 0.5, fn: (w) => takeRaw(w, 'ayam') },
-      { at: 0.8, fn: (w) => placeInStation(w, 'fry') },
-      { at: 1.0, fn: (w) => takeRaw(w, 'cabai') },
-      { at: 1.3, fn: (w) => placeInStation(w, 'chop') },
-      { at: 3.5, fn: (w) => collectFromStation(w, 'chop', 0) },
-      { at: 3.7, fn: (w) => addToPlate(w) },
-      { at: 5.0, fn: (w) => collectFromStation(w, 'fry', 0) },
-      { at: 5.2, fn: (w) => addToPlate(w) },
-    ]);
+    world.view = 'cook';
     return SCREEN_PLAY;
   }
   if (name === 'front') {
@@ -124,7 +106,7 @@ export function stageShot(name, world) {
     ]);
     return SCREEN_TITLE;
   }
-  // cover
+  // cover: the hub — the whole warung from above, busy mid-play.
   stageTicket(world, 'nasi-sambal', 0.6);
   stageTicket(world, 'nasi-ayam', 0.45);
   stageTicket(world, 'nasi-telur', 0.8);
@@ -140,7 +122,10 @@ export function stageShot(name, world) {
     { at: 3.7, fn: (w) => addToPlate(w) },
     { at: 4.0, fn: (w) => takeRaw(w, 'telur') },
     { at: 4.3, fn: (w) => placeInStation(w, 'fry') },
+    { at: 5.0, fn: (w) => collectFromStation(w, 'fry', 0) },
+    { at: 5.2, fn: (w) => addToPlate(w) },
   ]);
+  world.view = 'hub';
   return SCREEN_PLAY;
 }
 

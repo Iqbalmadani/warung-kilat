@@ -11,16 +11,34 @@ function inside(x, y, rect) {
 
 const RAW_BINS = ['ayam', 'telur', 'sayur', 'cabai'];
 
-/** Flip the camera between the kitchen (top) and the counter (front). */
-function toggleView(world) {
-  world.view = world.view === 'front' ? 'top' : 'front';
+/** Where the camera dives when it walks between two views. */
+const WALK_CENTERS = {
+  'hub>cook': { cx: 640, cy: 222 },
+  'hub>front': { cx: 640, cy: 538 },
+  'cook>hub': { cx: 640, cy: 360 },
+  'front>hub': { cx: 640, cy: 360 },
+};
+
+/** Start a camera walk from the current view to `to` (0.6 s). */
+function startTransition(world, to) {
+  if (world.transition || world.view === to) return false;
+  const center = WALK_CENTERS[`${world.view}>${to}`] || { cx: 640, cy: 360 };
+  world.transition = { from: world.view, to, t: 0, dur: 0.6, cx: center.cx, cy: center.cy };
   return true;
 }
 
 /** Handle a click at logical-field coordinates. Returns true when it did something. */
 export function handleClick(world, x, y) {
-  const { rice, fry, chop, plate, serve, bins, bin, viewToggle, front } = LAYOUT;
-  if (inside(x, y, viewToggle)) return toggleView(world);
+  if (world.transition) return false;
+  const { rice, fry, chop, plate, serve, bins, bin, viewToggle, front, hub } = LAYOUT;
+  if (inside(x, y, viewToggle)) {
+    return startTransition(world, world.view === 'hub' ? 'cook' : 'hub');
+  }
+  if (world.view === 'hub') {
+    if (inside(x, y, hub.kitchen)) return startTransition(world, 'cook');
+    if (inside(x, y, hub.dining)) return startTransition(world, 'front');
+    return false;
+  }
   if (world.view === 'front') {
     if (inside(x, y, front.serve)) return servePlate(world) > 0;
     for (let i = 0; i < 4; i += 1) {
@@ -65,6 +83,7 @@ export function handleClick(world, x, y) {
 
 /** Handle a key press. Returns 'start' | 'serve' | 'pause' | 'restart' | null. */
 export function handleKey(world, key, screen) {
+  if (world.transition) return null;
   if (key === ' ' || key === 'Enter') {
     if (screen !== 'play') return 'start';
     return servePlate(world) > 0 ? 'served' : null;
@@ -78,7 +97,11 @@ export function handleKey(world, key, screen) {
   if (key === '3') return takeRaw(world, 'telur') ? 'took' : null;
   if (key === '4') return takeRaw(world, 'sayur') ? 'took' : null;
   if (key === '5') return takeRaw(world, 'cabai') ? 'took' : null;
-  if (key === 'v' || key === 'V') return toggleView(world) ? 'took' : null;
+  if (key === 'v' || key === 'V') {
+    // Walk the camera: map -> kitchen -> counter -> map.
+    const next = world.view === 'hub' ? 'cook' : world.view === 'cook' ? 'front' : 'hub';
+    return startTransition(world, next) ? 'took' : null;
+  }
   if (key === 'f' || key === 'F') {
     for (let s = 0; s < 2; s += 1) if (collectFromStation(world, 'fry', s)) return 'took';
     return collectFromStation(world, 'chop', 0) ? 'took' : null;

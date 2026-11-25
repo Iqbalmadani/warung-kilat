@@ -75,9 +75,23 @@ export const LAYOUT = {
   bin:        { w: 220,  h: 104, gap: 16 },
   hands:      { x: 1024, y: 524, w: 216,  h: 104 },
   help:       { x: 40,   y: 652, w: 1200, h: 56 },
-  // Front view (view depan): customers behind the counter, plate + serve on it.
-  // The toggle button sits bottom-right in both views (provisional switch; the
-  // transition method is decided after the preview).
+  // Hub view (true top-down floor plan of the whole warung). Table centres line
+  // up with the front view's customer slots, so a customer stays in place
+  // when the camera walks from the map into the counter view.
+  hub: {
+    kitchen: { x: 40,   y: 64,  w: 1200, h: 316 },
+    dining:  { x: 40,   y: 396, w: 1200, h: 284 },
+    rice:    { x: 120,  y: 110, w: 120,  h: 80 },
+    stove:   { x: 280,  y: 110, w: 200,  h: 80 },
+    chop:    { x: 520,  y: 110, w: 180,  h: 80 },
+    plate:   { x: 760,  y: 110, w: 160,  h: 80 },
+    serve:   { x: 980,  y: 110, w: 220,  h: 80 },
+    cook:    { x: 640,  y: 300 },
+    counter: { x: 40,   y: 396, w: 1200, h: 74 },
+    table:   { w: 180,  h: 90,  gap: 64 },
+    tableRow:{ x: 110,  y: 520 },
+  },
+  // The view switch button sits bottom-right in every view.
   viewToggle: { x: 1140, y: 656, w: 120,  h: 40 },
   front: {
     counter:  { x: 40,   y: 400, w: 1200, h: 110 },

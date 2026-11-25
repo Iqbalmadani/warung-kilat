@@ -118,10 +118,24 @@ export function drawIngredientIcon(ctx, id, x, y, r) {
   ctx.restore();
 }
 
-function drawBackground(ctx, world) {
+function drawBackground(ctx, view) {
   ctx.fillStyle = PALETTE.wall;
   ctx.fillRect(0, 0, FIELD.width, FIELD.height);
-  if (world.view === 'front') {
+  if (view === 'hub') {
+    // The hub is the warung itself from directly above: one wooden floor with
+    // a tile grid, no walls in the way — the whole theme in one picture.
+    ctx.fillStyle = '#c89a6b';
+    ctx.fillRect(0, 56, FIELD.width, FIELD.height - 56);
+    ctx.strokeStyle = 'rgba(0,0,0,0.10)'; ctx.lineWidth = 2;
+    for (let x = 0; x <= FIELD.width; x += 80) {
+      ctx.beginPath(); ctx.moveTo(x, 56); ctx.lineTo(x, FIELD.height); ctx.stroke();
+    }
+    for (let y = 56; y <= FIELD.height; y += 80) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(FIELD.width, y); ctx.stroke();
+    }
+    return;
+  }
+  if (view === 'front') {
     // The warung's front: a big window onto the street, a hanging lamp, a sign.
     // It sits where the order board is in the top view (the board is hidden here).
     ctx.fillStyle = '#7ec8e3';
@@ -320,23 +334,24 @@ function drawCookAndBins(ctx, world, now) {
   rr(ctx, cook.x, cook.y + 96, cook.w, 54, 10); ctx.fill();
   ctx.fillStyle = PALETTE.counter;
   ctx.fillRect(cook.x, cook.y + 96, cook.w, 8);
-  // The cook
+  // The cook, seen from behind: you stand where the cook stands, so the face
+  // is never shown — this is the cook's side of the counter, not the customer's.
   const cx = cook.x + 110;
   const cy = cook.y + 60;
   shadow(ctx, cx, cy + 56, 44, 9);
-  ctx.fillStyle = '#fff8e7';
+  // Back of the head: dark hair, white hat from behind.
+  ctx.fillStyle = '#2b1d12';
   ctx.beginPath(); ctx.arc(cx, cy - 34, 26, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#fff8e7';
   rr(ctx, cx - 30, cy - 62, 60, 22, 11); ctx.fill();
-  ctx.fillStyle = '#2b1d12';
-  ctx.beginPath(); ctx.arc(cx - 9, cy - 34, 3, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx + 9, cy - 34, 3, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#2b1d12'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.arc(cx, cy - 28, 8, 0.2, Math.PI - 0.2); ctx.stroke();
+  ctx.fillStyle = '#fff8e7';
+  rr(ctx, cx - 34, cy - 52, 68, 10, 5); ctx.fill();
+  // Red shirt from the back, apron straps over the shoulders.
   ctx.fillStyle = '#e63946';
   rr(ctx, cx - 34, cy - 6, 68, 56, 12); ctx.fill();
   ctx.fillStyle = '#fff8e7';
-  rr(ctx, cx - 20, cy + 2, 40, 34, 8); ctx.fill();
+  rr(ctx, cx - 26, cy - 6, 12, 40, 6); ctx.fill();
+  rr(ctx, cx + 14, cy - 6, 12, 40, 6); ctx.fill();
   text(ctx, 'KOKI', cx, cy + 74, 12, '#fff8e7', 800, 'center');
   // Carried items float above the cook's hands
   world.hands.forEach((item, i) => {
@@ -421,6 +436,101 @@ function drawGameOver(ctx, world, best) {
   text(ctx, 'Tekan R untuk main lagi', 640, 440, 22, '#e8cba0', 700, 'center');
 }
 
+/** A ring that fills clockwise as `frac` goes 0..1 (a cooking or patience ring). */
+function ring(ctx, x, y, r, frac, color) {
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2); ctx.stroke();
+}
+
+/** The hub: the whole warung from directly above — kitchen, counter, dining
+ *  room — with the live state (jobs, plate, waiting customers) drawn on it. */
+function drawHubScene(ctx, world, now) {
+  const { hub } = LAYOUT;
+  const match = matchingTicket(world);
+  ctx.setLineDash([10, 8]);
+  ctx.strokeStyle = 'rgba(43,29,18,0.45)'; ctx.lineWidth = 3;
+  rr(ctx, hub.kitchen.x, hub.kitchen.y, hub.kitchen.w, hub.kitchen.h, 14); ctx.stroke();
+  rr(ctx, hub.dining.x, hub.dining.y, hub.dining.w, hub.dining.h, 14); ctx.stroke();
+  ctx.setLineDash([]);
+  text(ctx, 'DAPUR — klik untuk masak', 640, 92, 16, PALETTE.text, 800, 'center');
+  // Rice cooker, seen from above: a round pot with a lid.
+  const rc = { x: hub.rice.x + hub.rice.w / 2, y: hub.rice.y + hub.rice.h / 2 };
+  ctx.fillStyle = '#9aa5b1';
+  ctx.beginPath(); ctx.arc(rc.x, rc.y, 34, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff8e7';
+  ctx.beginPath(); ctx.ellipse(rc.x, rc.y, 26, 20, 0, 0, Math.PI * 2); ctx.fill();
+  text(ctx, 'NASI', rc.x, hub.rice.y + hub.rice.h + 18, 12, PALETTE.text, 800, 'center');
+  // Stove with two burners; a job shows its icon and a progress ring.
+  ctx.fillStyle = PALETTE.counter;
+  rr(ctx, hub.stove.x, hub.stove.y, hub.stove.w, hub.stove.h, 10); ctx.fill();
+  [330, 430].forEach((bx, i) => {
+    const job = world.fry[i];
+    ctx.fillStyle = '#3d2b1f';
+    ctx.beginPath(); ctx.arc(bx, 150, 26, 0, Math.PI * 2); ctx.fill();
+    if (job) {
+      drawIngredientIcon(ctx, job.remaining <= 0 ? job.cookedId : job.raw, bx, 150, 14);
+      ring(ctx, bx, 150, 31, 1 - job.remaining / job.total, job.remaining <= 0 ? PALETTE.green : '#f4a261');
+    }
+  });
+  text(ctx, 'WAJAN', 380, hub.stove.y + hub.stove.h + 18, 12, PALETTE.text, 800, 'center');
+  // Chopping board.
+  ctx.fillStyle = '#e8cba0';
+  rr(ctx, hub.chop.x, hub.chop.y, hub.chop.w, hub.chop.h, 10); ctx.fill();
+  if (world.chop) {
+    drawIngredientIcon(ctx, world.chop.remaining <= 0 ? world.chop.cookedId : world.chop.raw, 610, 150, 16);
+    ring(ctx, 610, 150, 32, 1 - world.chop.remaining / world.chop.total, world.chop.remaining <= 0 ? PALETTE.green : '#f4a261');
+  }
+  text(ctx, 'TALENAN', 610, hub.chop.y + hub.chop.h + 18, 12, PALETTE.text, 800, 'center');
+  // Assembly plate, seen from above.
+  drawPlateDish(ctx, 840, 150, world.plate);
+  text(ctx, 'PIRING', 840, hub.plate.y + hub.plate.h + 18, 12, PALETTE.text, 800, 'center');
+  // Serve window.
+  ctx.fillStyle = match ? PALETTE.serveReady : PALETTE.serveIdle;
+  rr(ctx, hub.serve.x, hub.serve.y, hub.serve.w, hub.serve.h, 10); ctx.fill();
+  text(ctx, match ? 'SAJIKAN!' : 'SAJIKAN', 1090, 150, 20, '#ffffff', 800, 'center');
+  if (match) text(ctx, DISHES[match.dishId].name, 1090, 172, 12, '#ffffff', 600, 'center');
+  // The cook, seen from above: shoulders, head, white hat.
+  ctx.fillStyle = '#e63946';
+  ctx.beginPath(); ctx.arc(hub.cook.x, hub.cook.y, 30, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#f2c89b';
+  ctx.beginPath(); ctx.arc(hub.cook.x, hub.cook.y, 15, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff8e7';
+  ctx.beginPath(); ctx.arc(hub.cook.x, hub.cook.y - 4, 15, Math.PI, 0); ctx.fill();
+  text(ctx, 'KOKI', hub.cook.x, hub.cook.y + 52, 12, PALETTE.text, 800, 'center');
+  // The serving counter.
+  counter3d(ctx, hub.counter);
+  ctx.fillStyle = '#a9713d';
+  ctx.fillRect(hub.counter.x, hub.counter.y, hub.counter.w, 6);
+  text(ctx, 'KONTER', 640, hub.counter.y + 46, 14, '#fff8e7', 800, 'center');
+  // Dining room: four tables, one customer per ticket.
+  for (let i = 0; i < 4; i += 1) {
+    const cx = hub.tableRow.x + i * (hub.table.w + hub.table.gap) + hub.table.w / 2;
+    const ty = hub.tableRow.y;
+    ctx.fillStyle = '#8b5a2b';
+    rr(ctx, cx - hub.table.w / 2, ty, hub.table.w, hub.table.h, 12); ctx.fill();
+    ctx.fillStyle = '#a9713d';
+    rr(ctx, cx - hub.table.w / 2, ty, hub.table.w, 10, 6); ctx.fill();
+    ctx.fillStyle = '#6b4423';
+    ctx.beginPath(); ctx.arc(cx - 55, ty + hub.table.h + 18, 12, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 55, ty + hub.table.h + 18, 12, 0, Math.PI * 2); ctx.fill();
+    const ticket = world.tickets[i];
+    if (!ticket) continue;
+    const dish = DISHES[ticket.dishId];
+    const frac = Math.max(0, ticket.patience / ticket.maxPatience);
+    drawIngredientIcon(ctx, dish.needs[0], cx - 58, ty + 45, 10);
+    // Seated on the far side of the table, facing the counter.
+    ctx.fillStyle = CUSTOMER_SHIRTS[ticket.id % 4];
+    ctx.beginPath(); ctx.arc(cx, ty - 14, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = CUSTOMER_SKINS[ticket.id % 4];
+    ctx.beginPath(); ctx.arc(cx, ty - 14, 12, 0, Math.PI * 2); ctx.fill();
+    ring(ctx, cx, ty - 14, 29, frac, frac > 0.5 ? PALETTE.green : frac > 0.3 ? '#f4a261' : PALETTE.red);
+  }
+  text(ctx, 'PELANGGAN — klik untuk layani', 56, 668, 16, PALETTE.text, 800);
+  text(ctx, 'Klik DAPUR untuk masak  •  klik PELANGGAN untuk melayani  •  [V] ganti view', 640, 700, 14, '#3d2b1f', 600, 'center');
+}
+
 const CUSTOMER_SKINS = ['#f2c89b', '#e8b88a', '#d9a06b', '#c98d5f'];
 const CUSTOMER_SHIRTS = ['#e63946', '#2a9d8f', '#f4a261', '#7b5ea7'];
 const CUSTOMER_HAIRS = ['#2b1d12', '#5a4028', '#8b5a2b', '#2b1d12'];
@@ -491,31 +601,62 @@ function drawFrontScene(ctx, world, now) {
   } else {
     text(ctx, 'Rakit pesanan di dapur (view atas), lalu sajikan di sini', 640, 560, 14, '#e8cba0', 600, 'center');
   }
-  text(ctx, 'View depan — klik pelanggan untuk menyajikan ke mereka  •  [V] kembali ke dapur', 640, 596, 13, '#3d2b1f', 600, 'center');
+  text(ctx, 'View depan — klik pelanggan untuk menyajikan ke mereka  •  [V] peta', 640, 596, 13, '#3d2b1f', 600, 'center');
 }
 
-/** The provisional view switch (bottom-right, both views). Transition TBD. */
+/** The view switch button (bottom-right, every view): from the map it walks
+ *  into the kitchen; from a room it walks back to the map. */
 function drawViewToggle(ctx, world) {
   const t = LAYOUT.viewToggle;
   ctx.fillStyle = PALETTE.board;
   rr(ctx, t.x, t.y, t.w, t.h, 10); ctx.fill();
   ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 2;
   rr(ctx, t.x, t.y, t.w, t.h, 10); ctx.stroke();
-  text(ctx, world.view === 'front' ? '👁 ATAS' : '👁 DEPAN', t.x + t.w / 2, t.y + 26, 15, '#ffd166', 800, 'center');
+  text(ctx, world.view === 'hub' ? '👁 MASAK' : '👁 PETA', t.x + t.w / 2, t.y + 26, 15, '#ffd166', 800, 'center');
 }
 
-/** Draw one frame of the game. `screen` is title, play or over; `now` drives animation. */
-export function draw(ctx, world, screen, now, best) {
-  drawBackground(ctx, world);
-  // In the front view the customers ARE the order board, so the board is hidden
-  // and the warung's window, sign and menu stay visible.
-  if (world.view !== 'front') drawBoard(ctx, world, now);
-  if (world.view === 'front') drawFrontScene(ctx, world, now);
+/** Draw one view (background, board, scene, HUD) without the toggle/flashes. */
+function drawScene(ctx, world, screen, now, best, view) {
+  drawBackground(ctx, view);
+  if (view !== 'front' && view !== 'hub') drawBoard(ctx, world, now);
+  if (view === 'front') drawFrontScene(ctx, world, now);
+  else if (view === 'hub') drawHubScene(ctx, world, now);
   else {
     drawStations(ctx, world, now);
     drawCookAndBins(ctx, world, now);
   }
   drawHud(ctx, world);
+}
+
+/** Ease a 0..1 progress for the camera walk (slow start and end). */
+function easeWalk(p) {
+  return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+}
+
+/** Draw one frame of the game. `screen` is title, play or over; `now` drives animation. */
+export function draw(ctx, world, screen, now, best) {
+  const tr = world.transition;
+  if (tr) {
+    // A camera walk: the destination view settles from slightly small to full
+    // size, while the view we leave zooms toward the zone we walk into and
+    // fades out — the camera dives into the room instead of cutting to it.
+    const p = easeWalk(Math.min(1, tr.t / tr.dur));
+    ctx.save();
+    ctx.translate(640, 360);
+    ctx.scale(0.94 + 0.06 * p, 0.94 + 0.06 * p);
+    ctx.translate(-640, -360);
+    drawScene(ctx, world, screen, now, best, tr.to);
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha = 1 - p;
+    ctx.translate(tr.cx, tr.cy);
+    ctx.scale(1 + 0.2 * p, 1 + 0.2 * p);
+    ctx.translate(-tr.cx, -tr.cy);
+    drawScene(ctx, world, screen, now, best, tr.from);
+    ctx.restore();
+  } else {
+    drawScene(ctx, world, screen, now, best, world.view);
+  }
   drawViewToggle(ctx, world);
   drawFlashes(ctx, world);
   drawBanner(ctx, world);

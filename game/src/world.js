@@ -51,9 +51,11 @@ export function createWorld(seed) {
     spawnIn: 6,
     flashes: [],
     lastServed: null,
-    // Camera: 'top' (dapur, dari atas) or 'front' (konter, dari depan). The rules
-    // never depend on it; only the renderer and the click zones read it.
-    view: 'top',
+    // Camera: 'hub' (peta warung, benar-benar dari atas), 'cook' (dapur) or
+    // 'front' (konter). The rules never depend on it; only the renderer and
+    // the click zones read it. `transition` is a live camera walk, or null.
+    view: 'hub',
+    transition: null,
   };
   return world;
 }

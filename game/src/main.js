@@ -68,6 +68,7 @@ canvas.addEventListener('click', (event) => {
   }
   if (screen === SCREEN_OVER) return;
   if (paused) return;
+  if (world.transition) return;
   const at = toField(event);
   handleClick(world, at.x, at.y);
   announce();
@@ -114,6 +115,14 @@ if (shotName) {
           announce();
           break;
         }
+      }
+    }
+    // Advance a camera walk; when it lands, the new view becomes current.
+    if (world.transition) {
+      world.transition.t += elapsed;
+      if (world.transition.t >= world.transition.dur) {
+        world.view = world.transition.to;
+        world.transition = null;
       }
     }
     ctx.setTransform(canvas.width / FIELD.width, 0, 0, canvas.height / FIELD.height, 0, 0);

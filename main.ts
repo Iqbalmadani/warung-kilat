@@ -6,7 +6,10 @@
 // library. The game: cook to order against the clock — rice cooker, wok (2 slots) and
 // chopping board (1 slot) feed one serving plate; tickets carry patience bars, serving pays
 // price plus a patience-based tip times a combo multiplier, and a missed ticket costs a heart.
-// 5 dishes, 120-second days with ramping pressure, keyboard + mouse play. Put the 4 PNG
+// 5 dishes, 120-second days with ramping pressure, keyboard + mouse play. Three views:
+// a true top-down map of the whole warung (click the kitchen to walk there and cook, click
+// the dining room to walk to the counter and serve — the camera walks between views), the
+// kitchen itself, and the serving counter with the waiting customers. Put the 4 PNG
 // screenshots in screenshots/ (the first by name is the cover) and run it.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
